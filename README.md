@@ -11,7 +11,7 @@
 
 </div>
 
-**FootFusion** is a full-fledged eCommerce website built with Django, a high-level Python web framework. It provides a robust, scalable, and user-friendly platform for a seamless online shopping experience. The project includes essential features like user authentication, product browsing, cart management, a secure checkout process with payment integration, and more.
+**RetailX** is a full-fledged eCommerce website built with Django, a high-level Python web framework. It provides a robust, scalable, and user-friendly platform for a seamless online shopping experience. The project includes essential features like user authentication, product browsing, cart management, a secure checkout process with payment integration, and more.
 
 ## Table of Contents
 

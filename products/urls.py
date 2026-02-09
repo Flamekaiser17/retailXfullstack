@@ -10,6 +10,10 @@ urlpatterns = [
     path('product-reviews/edit/<uuid:review_uid>/', edit_review, name='edit_review'),
     path('like-review/<review_uid>/', like_review, name='like_review'),
     path('dislike-review/<review_uid>/',dislike_review, name='dislike_review'),
+    path('notify/<product_uid>/', stock_notification_signup, name='stock_notification'),
     path('<slug>/', get_product, name='get_product'),
     path('<slug>/<review_uid>/delete/', delete_review, name='delete_review'),
 ]
+
+# Wishlist → Cart
+# Real ecommerce feature (🔥 interview point)

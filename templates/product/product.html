@@ -1,1038 +1,1501 @@
 {% extends "base/base.html"%}
-{% block title %}{{product.product_name}} {% endblock %}
-{% block start %} {% load crispy_forms_tags %}
+{% block title %}{{product.product_name}}{% endblock %}
+{% block start %}
+{% load crispy_forms_tags %}
 
+<!-- ==================== STYLES ==================== -->
 <style>
-  #mainImage {
-    transition: transform 0.25s ease;
-    cursor: zoom-in;
-  }
-
-  .zoomed-in {
-    transform: scale(2);
-    cursor: zoom-out;
-  }
-
-  /* Unified Color System */
+  /* ========== CSS VARIABLES ========== */
   :root {
-    --primary-color: #6366f1;
-    --accent-color: #fbbf24;
-    --text-dark: #1e293b;
-  }
-
-  .like-btn {
-    background-color: var(--primary-color);
-    color: #fff;
-    border: none;
-    border-radius: 20px;
-    padding: 0.4rem 1rem;
-    transition: all 0.3s ease;
-    font-weight: bold;
-  }
-
-  .like-btn:hover {
-    background-color: var(--accent-color);
-    color: var(--text-dark);
-    transform: scale(1.1);
-    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
-  }
-
-  .dislike-btn {
-    background-color: var(--primary-color);
-    color: #fff;
-    border: none;
-    border-radius: 20px;
-    padding: 0.4rem 1rem;
-    transition: all 0.3s ease;
-    font-weight: bold;
-  }
-
-  .dislike-btn:hover {
-    background-color: var(--accent-color);
-    color: var(--text-dark);
-    transform: scale(1.1);
-    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
-  }
-
-  /* Review Card Background */
-  .review-card-body {
-    background: rgba(99, 102, 241, 0.1);
-  }
-
-  /* Delete Review Button */
-  .delete-review-btn {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-    transition: all 0.3s ease;
-  }
-
-  .delete-review-btn:hover {
-    background: var(--accent-color);
-    border-color: var(--accent-color);
-    color: var(--text-dark);
-  }
-
-  .delete-review-link {
-    color: var(--primary-color);
-    transition: all 0.3s ease;
-  }
-
-  .delete-review-link:hover {
-    color: var(--accent-color);
-  }
-
-  @media (max-width: 768px) {
-
-    .like-btn,
-    .dislike-btn {
-      padding: 0.3rem 0.8rem;
-      font-size: 0.9rem;
-    }
-  }
-</style>
-
-<section class="section-content padding-y">
-  <div class="container mt-3">
-    {% include 'base/alert.html' %}
-    <!-- ============================ COMPONENT Product Details ================================= -->
-    <div class="card">
-      <div class="row no-gutters">
-        <aside class="col-md-6">
-          <!-- Gallery-Wrap -->
-          <article class="gallery-wrap">
-            <div class="text-center mt-5 ml-3 mr-3 img-big-wrap">
-              <div class="carousel-inner">
-                {% for image in product.product_images.all %}
-                <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                  <img id="mainImage" src="{{ image.image_url }}" alt="{{ product.product_name }}" />
-                </div>
-                {% endfor %}
-              </div>
-
-              <!-- Thumnbs-Wrap -->
-              <div class="form-row thumbs-wrap mt-5 d-flex justify-content-center">
-                {% for image in product.product_images.all %}
-                <p class="item-thumb mx-2">
-                  <img src="{{image.image_url}}" class="img-thumbnail" onclick="updateMainImage(this.src)" />
-                </p>
-                {% endfor %}
-              </div>
-              <!-- Thumnbs-Wrap End.// -->
-            </div>
-          </article>
-          <!-- Gallery-Wrap End.// -->
-        </aside>
-        <main class="col-md-6 border-left">
-          <article class="content-body">
-            <h2 class="title">{{product.product_name}}</h2>
-            <h6 class="text-muted">{{product.category}}</h6>
-
-            <div class="rating-wrap my-3">
-              <small class="label-rating text-muted">{{ product.get_rating }}</small>
-              <ul class="rating-stars">
-                <li style="width: {{ rating_percentage }}%" class="stars-active">
-                  <i class="fa fa-star"></i> <i class="fa fa-star"></i>
-                  <i class="fa fa-star"></i> <i class="fa fa-star"></i>
-                  <i class="fa fa-star"></i>
-                </li>
-                <li>
-                  <i class="fa fa-star"></i> <i class="fa fa-star"></i>
-                  <i class="fa fa-star"></i> <i class="fa fa-star"></i>
-                  <i class="fa fa-star"></i>
-                </li>
-              </ul>
-              <small class="label-rating text-muted">{{ product.reviews.count }} reviews</small>
-            </div>
-            <!-- rating-wrap.// -->
-
-            <div class="mb-3">
-              {% if updated_price %}
-              <var class="price h4">₹{{ updated_price }}.00</var>
-              {% else%}
-              <var class="price h4">₹{{ product.price }}.00</var>
-              {% endif %}
-            </div>
-            <!-- price-detail-wrap .// -->
-
-            <p style="line-height: 2rem; margin-top: revert; text-align: justify">
-              {{product.product_desription}}
-            </p>
-            <br />
-            <dl class="row">
-              <dt class="col-sm-3">Brand</dt>
-              <dd class="col-sm-9">Nike</dd>
-
-              <dt class="col-sm-3">Color</dt>
-              <dd class="col-sm-9">
-                {% for color in product.color_variant.all %} {{ color.color_name }} {% endfor %}
-              </dd>
-
-              <dt class="col-sm-3">Delivery</dt>
-              <dd class="col-sm-9">All over the World!</dd>
-            </dl>
-
-            <hr />
-            <div class="form-row">
-              {% if sorted_size_variants %}
-              <div class="form-group col-md">
-                <label>Select size</label>
-                <div class="mt-1">
-                  {% for size in sorted_size_variants %}
-
-                  <label class="custom-control custom-radio custom-control-inline">
-                    <input type="radio" name="selected_size" value="{{ size.size_name }}"
-                      onchange="get_correct_price('{{ size.size_name }}'); updateCartUrl();"
-                      id="size-{{ size.size_name }}" {% if selected_size == size.size_name %} checked {% endif %}
-                      class="custom-control-input" />
-                    <div class="custom-control-label">{{ size.size_name }}</div>
-                  </label>
-
-                  {% endfor %}
-                </div>
-              </div>
-              {% endif %}
-            </div>
-
-            <!-- Add to Wishlist Button -->
-            <div class="form-group d-flex justify-content-start">
-              <div class="d-sm-flex mr-2">
-                <div class="mb-2 mb-sm-0 mr-0 mr-sm-3">
-                  <form method="POST" action="{% url 'add_to_wishlist' product.uid %}?size={{ selected_size }}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-primary">
-                      <i class="fas fa-heart"></i> Add to Wishlist
-                    </button>
-                  </form>
-                </div>
-                <a href="{% url 'add_to_cart' product.uid %}?size={{ selected_size }}" id="add-to-cart-btn"
-                  class="btn btn-primary">
-                  <i class="fas fa-shopping-bag mr-1"></i>
-                  <span>Add to cart</span>
-                </a>
-              </div>
-            </div>
-          </article>
-        </main>
-      </div>
-    </div>
-
-    <!-- Related Products Section -->
-    <h3 class="title padding-y-sm">Related products</h3>
-    {% if related_products%}
-    {% with related_products as list_products %}
-    {% include 'product_parts/product_list.html' %}
-    {% endwith %}
-    {% else %}
-    <p>No related products found.</p>
-    {% endif %}
-    <!-- Related Products Section End -->
-
-    <hr />
-
-    <!-- Product Review Section -->
-    <h3 class="title padding-bottom-sm">Reviews</h3>
-
-    {% for review in product.reviews.all %}
-    <div class="card mb-3">
-      <div class="card-body review-card-body">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <p>
-              <strong>Posted on: </strong>{{ review.date_added|date:"Y-m-d" }} by
-              <strong>{{ review.user.get_full_name|default:review.user.username }}</strong><br />
-              <strong>Rating: </strong>{{ review.stars }}/5<br />
-              <strong>Comment: </strong>{{ review.content }}
-            </p>
-          </div>
-          <div class="d-flex flex-wrap align-items-center gap-2">
-            {% if request.user.is_authenticated %}
-            <!-- Like Button -->
-            <button class="btn like-btn d-flex align-items-center" onclick="toggleLike('{{ review.uid }}')">
-              <i class="fas fa-thumbs-up me-2"></i>
-              <span id="like-count-{{ review.uid }}">{{ review.like_count }}</span>
-            </button>
-
-            <!-- Dislike Button -->
-            <button class="btn dislike-btn d-flex align-items-center" onclick="toggleDislike('{{ review.uid }}')">
-              <i class="fas fa-thumbs-down me-2"></i>
-              <span id="dislike-count-{{ review.uid }}">{{ review.dislike_count }}</span>
-            </button>
-
-            {% else %}
-            <button class="btn like-btn d-flex align-items-center">
-              <i class="fas fa-thumbs-up me-2"></i>
-              <span id="like-count-{{ review.uid }}">{{ review.like_count }}</span>
-            </button>
-
-            <button class="btn dislike-btn d-flex align-items-center">
-              <i class="fas fa-thumbs-down me-2"></i>
-              <span id="dislike-count-{{ review.uid }}">{{ review.dislike_count }}</span>
-            </button>
-            {% endif %}
-
-            <!-- Delete Button -->
-            {% if review.user == request.user %}
-            <button class="btn btn-link p-0 delete-review-link ms-auto" title="Delete Review" data-bs-toggle="modal"
-              data-bs-target="#deleteReviewModal"
-              onclick="setDeleteAction('{% url 'delete_review' product.slug review.uid %}')" type="button">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-    {% empty %}
-    <p class="padding-bottom-sm">No reviews yet...</p>
-    {% endfor %}
-
-    <!-- Modern Review Form -->
-    <div class="review-form-section mt-5">
-      <div class="section-header text-center mb-4">
-        <h3 class="section-title">Share Your Experience</h3>
-        <p class="section-subtitle text-muted">Help other customers by writing a review</p>
-      </div>
-
-      {% if request.user.is_authenticated %}
-      <div class="modern-review-form-container">
-        <div class="review-form-card">
-          <form method="POST" action="" class="modern-review-form" id="reviewForm">
-            {% csrf_token %}
-
-            <!-- User Info Section -->
-            <div class="reviewer-info mb-4">
-              <div class="d-flex align-items-center">
-                <div class="reviewer-avatar">
-                  {% if request.user.profile.profile_image %}
-                  <img src="{{ request.user.profile.profile_image.url }}" alt="Your Avatar" class="avatar-img">
-                  {% else %}
-                  <div class="avatar-placeholder">
-                    <i class="fas fa-user"></i>
-                  </div>
-                  {% endif %}
-                </div>
-                <div class="reviewer-details ms-3">
-                  <h5 class="reviewer-name mb-1">{{ request.user.get_full_name|default:request.user.username }}</h5>
-                  <p class="reviewer-label text-muted mb-0">Verified Customer</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Rating Section -->
-            <div class="rating-section mb-4">
-              <label class="form-label fw-semibold mb-3">How would you rate this product?</label>
-              <div class="star-rating-container">
-                <div class="star-rating" id="starRating">
-                  <input type="hidden" name="stars" id="ratingValue" value="0">
-                  <div class="stars">
-                    <i class="fas fa-star star" data-rating="1"></i>
-                    <i class="fas fa-star star" data-rating="2"></i>
-                    <i class="fas fa-star star" data-rating="3"></i>
-                    <i class="fas fa-star star" data-rating="4"></i>
-                    <i class="fas fa-star star" data-rating="5"></i>
-                  </div>
-                  <div class="rating-text">
-                    <span id="ratingText">Click to rate</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Review Content Section -->
-            <div class="review-content-section mb-4">
-              <label for="reviewContent" class="form-label fw-semibold">Write your review</label>
-              <textarea name="content" id="reviewContent" class="form-control review-textarea" rows="4"
-                placeholder="Share your thoughts about this product. What did you like or dislike? How was the quality, fit, and overall experience?"
-                maxlength="500" required></textarea>
-            </div>
-
-            <!-- Submit Section -->
-            <div class="submit-section">
-              <div class="d-flex justify-content-between align-items-center">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="recommendProduct">
-                  <label class="form-check-label text-muted" for="recommendProduct">
-                    I would recommend this product to others
-                  </label>
-                </div>
-                <div class="submit-buttons">
-                  <button type="button" class="btn btn-outline-secondary me-2" onclick="resetForm()">
-                    <i class="fas fa-undo me-1"></i>Reset
-                  </button>
-                  <button type="submit" class="btn btn-primary btn-submit" disabled>
-                    <i class="fas fa-paper-plane me-1"></i>Submit Review
-                  </button>
-                </div>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-      {% else %}
-      <div class="login-prompt-card">
-        <div class="text-center py-5">
-          <div class="login-icon mb-3">
-            <i class="fas fa-user-circle"></i>
-          </div>
-          <h4 class="mb-3">Sign in to Write a Review</h4>
-          <p class="text-muted mb-4">Share your experience and help other customers make informed decisions</p>
-          <div class="login-buttons">
-            <a href="{% url 'login' %}" class="btn btn-primary me-2">
-              <i class="fas fa-sign-in-alt me-1"></i>Sign In
-            </a>
-            <a href="{% url 'register' %}" class="btn btn-outline-primary">
-              <i class="fas fa-user-plus me-1"></i>Create Account
-            </a>
-          </div>
-        </div>
-      </div>
-      {% endif %}
-    </div>
-    <!-- Product Review Section End-->
-    <!-- ============================ COMPONENT Product Details End ================================= -->
-  </div>
-
-  <!-- Delete Review Confirmation Modal -->
-  <div class="modal fade" id="deleteReviewModal" tabindex="-1" aria-labelledby="deleteReviewModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="deleteReviewModalLabel">
-            Confirm Delete
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          Are you sure you want to delete this review?
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            Cancel
-          </button>
-          <form id="deleteReviewForm" method="POST" style="display: inline">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-outline-primary delete-review-btn">Delete</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Modern Review Form Styles -->
-<style>
-  /* Unified Color System */
-  :root {
-    --primary-color: #6366f1;
+    --primary: #6366f1;
     --primary-dark: #4f46e5;
-    --primary-light: #a5b4fc;
-    --accent-color: #fbbf24;
-    --accent-dark: #f59e0b;
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --text-dark: #1e293b;
+    --accent: #fbbf24;
+    --success: #10b981;
+    --danger: #ef4444;
+    --text: #1e293b;
     --text-muted: #64748b;
-    --text-light: #94a3b8;
     --bg-light: #f8fafc;
-    --bg-white: #ffffff;
-    --border-color: #e2e8f0;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --border: #e2e8f0;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
   }
 
-  /* Review Form Section */
-  .review-form-section {
-    margin: 3rem 0;
+  /* ========== IMAGE GALLERY ========== */
+  #mainImage {
+    transition: transform 0.3s ease;
+    cursor: pointer;
+    max-height: 500px;
+    width: 100%;
+    object-fit: contain;
+    background: var(--bg-light);
+    border-radius: 8px;
   }
 
-  .section-header .section-title {
-    color: var(--text-dark);
-    font-weight: 700;
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+  .thumbs-wrap .item-thumb {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    overflow: hidden;
   }
 
-  .section-header .section-subtitle {
+  .thumbs-wrap .item-thumb:hover,
+  .thumbs-wrap .item-thumb.active {
+    opacity: 1;
+    border-color: var(--primary);
+    transform: scale(1.05);
+  }
+
+  .thumbs-wrap img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+  }
+
+  /* Image Zoom Icon */
+  .zoom-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .zoom-icon:hover {
+    background: var(--primary);
+  }
+
+  /* ========== LIGHTBOX ========== */
+  .lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lightbox.active {
+    display: flex;
+  }
+
+  .lightbox-content {
+    max-width: 90%;
+    max-height: 90%;
+    position: relative;
+  }
+
+  .lightbox-img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: white;
+    color: black;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 10000;
+  }
+
+  .lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.9);
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .lightbox-nav:hover {
+    background: white;
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  .lightbox-prev {
+    left: 20px;
+  }
+
+  .lightbox-next {
+    right: 20px;
+  }
+
+  /* ========== COLOR SWATCHES ========== */
+  .color-swatches {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .color-swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .color-swatch:hover,
+  .color-swatch.active {
+    border-color: var(--primary);
+    transform: scale(1.1);
+    box-shadow: var(--shadow);
+  }
+
+  .color-swatch.active::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0,0,0,0.5);
+  }
+
+  /* ========== SIZE SELECTOR ========== */
+  .size-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .size-option {
+    position: relative;
+  }
+
+  .size-option input {
+    display: none;
+  }
+
+  .size-label {
+    display: block;
+    padding: 10px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+  }
+
+  .size-option input:checked + .size-label {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+  }
+
+  .size-label:hover {
+    border-color: var(--primary);
+  }
+
+  .size-guide-link {
+    color: var(--primary);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  /* ========== QUANTITY CONTROLS ========== */
+  .qty-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 5px;
+    width: fit-content;
+  }
+
+  .qty-btn {
+    background: transparent;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+  }
+
+  .qty-btn:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+  }
+
+  .qty-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  #quantity {
+    width: 50px;
+    text-align: center;
+    border: none;
+    font-weight: 600;
     font-size: 1.1rem;
-    color: var(--text-muted);
   }
 
-  /* Modern Review Form Container */
-  .modern-review-form-container {
+  /* ========== STOCK BADGE ========== */
+  .stock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin: 10px 0;
+  }
+
+  .stock-in {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .stock-low {
+    background: #fed7aa;
+    color: #9a3412;
+  }
+
+  .stock-out {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .stock-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* ========== BUTTONS ========== */
+  .btn-primary-custom {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary-custom:hover:not(.disabled) {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .btn-primary-custom.disabled {
+    background: var(--text-muted);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .btn-outline-custom {
+    background: white;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-outline-custom:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  /* ========== NOTIFY ME MODAL ========== */
+  .notify-badge {
+    background: var(--accent);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+  }
+
+  .notify-badge:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow);
+  }
+
+  /* ========== MODALS ========== */
+  .modal-content {
+    border-radius: 12px;
+    border: none;
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    border: none;
+  }
+
+  .modal-body {
+    padding: 2rem;
+  }
+
+  /* ========== SIZE GUIDE TABLE ========== */
+  .size-guide-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+
+  .size-guide-table th,
+  .size-guide-table td {
+    padding: 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .size-guide-table th {
+    background: var(--bg-light);
+    font-weight: 600;
+  }
+
+  /* ========== ASK QUESTION SECTION ========== */
+  .question-box {
+    background: var(--bg-light);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 2px dashed var(--border);
+    margin: 1.5rem 0;
+  }
+
+  .question-input {
+    width: 100%;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 10px;
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .question-input:focus {
+    border-color: var(--primary);
+    outline: none;
+  }
+
+  /* ========== RECENTLY VIEWED ========== */
+  .recently-viewed {
+    margin-top: 3rem;
+  }
+
+  .product-card-mini {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .product-card-mini:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .product-card-mini img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+
+  /* ========== REVIEWS ========== */
+  .review-card {
+    background: rgba(99, 102, 241, 0.05);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+  }
+
+  .like-btn, .dislike-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 16px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .like-btn:hover, .dislike-btn:hover {
+    background: var(--accent);
+    color: var(--text);
+    transform: scale(1.05);
+  }
+
+  /* ========== REVIEW FORM ========== */
+  .review-form-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
     max-width: 800px;
     margin: 0 auto;
   }
 
-  .review-form-card {
-    background: var(--bg-white);
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color);
-    transition: all 0.3s ease;
-  }
-
-  .review-form-card:hover {
-    box-shadow: var(--shadow-xl);
-    transform: translateY(-2px);
-  }
-
-  /* Reviewer Info */
-  .reviewer-info {
-    padding: 1.5rem;
-    background: var(--accent-color);
-    border-radius: 12px;
-    margin-bottom: 2rem;
-  }
-
-  .reviewer-avatar {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 3px solid var(--bg-white);
-    box-shadow: var(--shadow-md);
-  }
-
-  .avatar-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .avatar-placeholder {
-    width: 100%;
-    height: 100%;
-    background: var(--primary-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.5rem;
-  }
-
-  .reviewer-name {
-    color: var(--text-dark);
-    font-weight: 600;
-    font-size: 1.2rem;
-  }
-
-  .reviewer-label {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-
-  /* Star Rating */
-  .rating-section {
-    text-align: center;
-    padding: 1.5rem;
-    background: var(--bg-light);
-    border-radius: 12px;
-    border: 2px dashed var(--border-color);
-    transition: all 0.3s ease;
-  }
-
-  .rating-section:hover {
-    border-color: var(--primary-color);
-    background: rgba(99, 102, 241, 0.05);
-  }
-
-  .star-rating-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
-
   .stars {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
     font-size: 2rem;
+    justify-content: center;
   }
 
   .star {
     color: #d1d5db;
     cursor: pointer;
     transition: all 0.2s ease;
-    transform-origin: center;
   }
 
-  .star:hover {
+  .star:hover,
+  .star.hover {
+    color: var(--accent);
     transform: scale(1.2);
-    color: var(--accent-color);
   }
 
   .star.active {
-    color: var(--accent-color);
-    text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    color: var(--accent);
   }
 
-  .star.hover {
-    color: var(--accent-color);
-    transform: scale(1.1);
-  }
-
-  .rating-text {
-    font-weight: 500;
-    color: var(--text-muted);
-    font-size: 1rem;
-    transition: all 0.3s ease;
-  }
-
-  .rating-text.has-rating {
-    color: var(--primary-color);
-    font-weight: 600;
-  }
-
-  /* Review Content */
-  .review-textarea {
-    border: 2px solid var(--border-color);
-    border-radius: 12px;
-    padding: 1rem;
-    font-size: 1rem;
-    line-height: 1.6;
-    resize: vertical;
-    min-height: 120px;
-    transition: all 0.3s ease;
-    width: 100%;
-  }
-
-  .review-textarea:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    outline: none;
-  }
-
-  /* Review Guidelines */
-  .review-guidelines {
-    background: rgba(251, 191, 36, 0.1);
-    border: 1px solid rgba(251, 191, 36, 0.3);
-    border-radius: 12px;
-    padding: 1.5rem;
-  }
-
-  .guidelines-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 1rem;
-    color: var(--text-dark);
-    font-size: 1rem;
-  }
-
-  .guidelines-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .guidelines-list li {
-    position: relative;
-    padding-left: 1.5rem;
-    margin-bottom: 0.5rem;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-  }
-
-  .guidelines-list li::before {
-    content: '✓';
-    position: absolute;
-    left: 0;
-    color: var(--success-color);
-    font-weight: bold;
-  }
-
-  /* Submit Section */
-  .submit-section {
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border-color);
-  }
-
-  .btn-submit {
-    background: var(--primary-color);
-    border: none;
-    padding: 0.75rem 2rem;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .btn-submit:hover:not(:disabled) {
-    background: var(--accent-color);
-    color: var(--text-dark);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-  }
-
-  .btn-submit:disabled {
-    background: var(--text-light);
-    color: var(--bg-white);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-
-  .btn-submit::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.2);
-    transition: left 0.5s;
-  }
-
-  .btn-submit:hover:not(:disabled)::before {
-    left: 100%;
-  }
-
-  /* Login Prompt Card */
-  .login-prompt-card {
-    max-width: 600px;
-    margin: 0 auto;
-    background: var(--bg-white);
-    border-radius: 16px;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color);
-  }
-
-  .login-icon {
-    font-size: 4rem;
-    color: var(--primary-color);
-  }
-
-  .login-buttons .btn {
-    padding: 0.75rem 1.5rem;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-  }
-
-  .login-buttons .btn-primary {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-  }
-
-  .login-buttons .btn-primary:hover {
-    background: var(--accent-color);
-    border-color: var(--accent-color);
-    color: var(--text-dark);
-    transform: translateY(-2px);
-  }
-
-  .login-buttons .btn-outline-primary {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-  }
-
-  .login-buttons .btn-outline-primary:hover {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-    transform: translateY(-2px);
-  }
-
-  /* Responsive Design */
+  /* ========== RESPONSIVE ========== */
   @media (max-width: 768px) {
-    .review-form-card {
-      padding: 1.5rem;
-      margin: 0 1rem;
+    .size-grid {
+      grid-template-columns: repeat(4, 1fr);
     }
 
-    .reviewer-info {
+    .lightbox-nav {
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+    }
+
+    .thumbs-wrap img {
+      width: 60px;
+      height: 60px;
+    }
+
+    .modal-body {
       padding: 1rem;
     }
 
-    .stars {
-      font-size: 1.5rem;
-      gap: 0.25rem;
-    }
-
-    .submit-section .d-flex {
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .submit-buttons {
+    .btn-primary-custom,
+    .btn-outline-custom {
       width: 100%;
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .submit-buttons .btn {
-      flex: 1;
+      justify-content: center;
     }
   }
 
-  /* Animation for form submission */
-  @keyframes submitSuccess {
-    0% {
-      transform: scale(1);
-    }
-
-    50% {
-      transform: scale(1.05);
-    }
-
-    100% {
-      transform: scale(1);
-    }
+  /* ========== LAZY LOADING ========== */
+  img[loading="lazy"] {
+    opacity: 0;
+    transition: opacity 0.3s;
   }
 
-  .form-submitted {
-    animation: submitSuccess 0.3s ease;
+  img[loading="lazy"].loaded {
+    opacity: 1;
   }
 </style>
 
+<!-- ==================== PRODUCT SECTION ==================== -->
+<section class="section-content padding-y">
+  <div class="container mt-3">
+    {% include 'base/alert.html' %}
+
+    <div class="card">
+      <div class="row no-gutters">
+        
+        <!-- ========== LEFT: IMAGE GALLERY ========== -->
+        <aside class="col-md-6">
+          <article class="gallery-wrap">
+            
+            <!-- Main Image with Zoom Icon -->
+            <div class="text-center mt-5 ml-3 mr-3 img-big-wrap position-relative">
+              <span class="zoom-icon" onclick="openLightbox(0)">
+                <i class="fas fa-search-plus"></i> View Full
+              </span>
+              
+              <img id="mainImage" 
+                   src="{{ product.product_images.first.image_url }}" 
+                   alt="{{ product.product_name }}"
+                   loading="lazy"
+                   onclick="openLightbox(0)" />
+
+              <!-- Thumbnails -->
+              <div class="thumbs-wrap mt-4 d-flex justify-content-center flex-wrap">
+                {% for image in product.product_images.all %}
+                <div class="item-thumb m-2 {% if forloop.first %}active{% endif %}" 
+                     data-index="{{ forloop.counter0 }}"
+                     onclick="changeImage('{{ image.image_url }}', {{ forloop.counter0 }})">
+                  <img src="{{ image.image_url }}" 
+                       alt="Thumbnail {{ forloop.counter }}"
+                       loading="lazy" />
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+          </article>
+        </aside>
+
+        <!-- ========== RIGHT: PRODUCT INFO ========== -->
+        <main class="col-md-6 border-left">
+          <article class="content-body p-4">
+            
+            <!-- Title & Category -->
+            <h2 class="title mb-2">{{ product.product_name }}</h2>
+            <p class="text-muted mb-3">{{ product.category }}</p>
+
+            <!-- Rating -->
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="text-warning">
+                {% for i in "12345" %}
+                  {% if forloop.counter <= product.get_rating %}
+                    <i class="fas fa-star"></i>
+                  {% else %}
+                    <i class="far fa-star"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              <small class="text-muted">{{ product.get_rating }}/5 ({{ product.reviews.count }} reviews)</small>
+            </div>
+
+            <!-- Price -->
+            <div class="mb-3">
+              {% if updated_price %}
+                <h3 class="text-primary mb-0">₹{{ updated_price }}</h3>
+              {% else %}
+                <h3 class="text-primary mb-0">₹{{ product.price }}</h3>
+              {% endif %}
+            </div>
+
+            <!-- Stock Status -->
+            {% if product.stock > 10 %}
+              <span class="stock-badge stock-in">
+                <span class="stock-dot" style="background: #065f46;"></span>
+                In Stock ({{ product.stock }} available)
+              </span>
+            {% elif product.stock > 0 %}
+              <span class="stock-badge stock-low">
+                <span class="stock-dot" style="background: #9a3412;"></span>
+                Only {{ product.stock }} left!
+              </span>
+            {% else %}
+              <span class="stock-badge stock-out">
+                <span class="stock-dot" style="background: #991b1b;"></span>
+                Out of Stock
+              </span>
+              <div class="mt-2">
+                <span class="notify-badge" data-bs-toggle="modal" data-bs-target="#notifyModal">
+                  <i class="fas fa-bell"></i>
+                  Notify When Available
+                </span>
+              </div>
+            {% endif %}
+
+            <!-- Description -->
+            <p class="mt-3" style="line-height: 1.8;">{{ product.product_desription }}</p>
+
+            <hr class="my-4" />
+
+            <!-- Color Selection -->
+            {% if product.color_variant.all %}
+            <div class="mb-4">
+              <label class="fw-bold mb-2">Select Color</label>
+              <div class="color-swatches" id="colorSwatches">
+                {% for color in product.color_variant.all %}
+                <div class="color-swatch {% if forloop.first %}active{% endif %}" 
+                     style="background-color: {{ color.color_code|default:'#ccc' }};"
+                     data-color="{{ color.color_name }}"
+                     onclick="selectColor(this, '{{ color.color_name }}')"
+                     title="{{ color.color_name }}">
+                </div>
+                {% endfor %}
+              </div>
+              <input type="hidden" id="selectedColor" value="{{ product.color_variant.first.color_name }}">
+            </div>
+            {% endif %}
+
+            <!-- Size Selection -->
+            {% if sorted_size_variants %}
+            <div class="mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="fw-bold mb-0">Select Size</label>
+                <span class="size-guide-link" data-bs-toggle="modal" data-bs-target="#sizeGuideModal">
+                  <i class="fas fa-ruler"></i> Size Guide
+                </span>
+              </div>
+              <div class="size-grid">
+                {% for size in sorted_size_variants %}
+                <div class="size-option">
+                  <input type="radio" 
+                         name="selected_size" 
+                         value="{{ size.size_name }}"
+                         id="size-{{ size.size_name }}"
+                         {% if selected_size == size.size_name %}checked{% endif %}
+                         onchange="updatePriceAndCart('{{ size.size_name }}')">
+                  <label for="size-{{ size.size_name }}" class="size-label">
+                    {{ size.size_name }}
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Quantity -->
+            <div class="mb-4">
+              <label class="fw-bold mb-2">Quantity</label>
+              <div class="qty-controls">
+                <button type="button" class="qty-btn" id="qtyMinus">−</button>
+                <input type="text" id="quantity" value="1" readonly>
+                <button type="button" class="qty-btn" id="qtyPlus">+</button>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-2 flex-wrap mb-3">
+              <button type="button"
+                      id="addToCartBtn"
+                      onclick="addToCart()"
+                      data-stock="{{ product.stock }}"
+                      class="btn-primary-custom">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Add to Cart</span>
+              </button>
+
+              <button type="button"
+                      id="addToWishlistBtn"
+                      onclick="addToWishlist()"
+                      class="btn-outline-custom">
+                <i class="fas fa-heart"></i>
+                <span>{% if in_wishlist %}In Wishlist{% else %}Add to Wishlist{% endif %}</span>
+              </button>
+            </div>
+              </button>
+            </div>
+
+            <!-- Specs -->
+            <div class="small text-muted">
+              <i class="fas fa-shield-alt"></i> Secure checkout<br>
+              <i class="fas fa-undo"></i> 7-day return policy<br>
+              <i class="fas fa-headset"></i> 24/7 customer support
+            </div>
+
+          </article>
+        </main>
+      </div>
+    </div>
+
+    <!-- ========== ASK QUESTION ========== -->
+    <div class="question-box mt-4">
+      <h5><i class="fas fa-question-circle text-primary"></i> Have a Question?</h5>
+      <p class="text-muted small mb-3">Ask us anything about this product</p>
+      {% if request.user.is_authenticated %}
+        <textarea class="question-input" id="questionText" placeholder="Type your question here..."></textarea>
+        <button class="btn-primary-custom mt-2" onclick="submitQuestion()">
+          <i class="fas fa-paper-plane"></i> Submit Question
+        </button>
+      {% else %}
+        <p class="text-muted">
+          <a href="{% url 'login' %}">Login</a> to ask a question
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- ========== DETAILED PRODUCT INFORMATION ========== -->
+    <section class="section-content padding-y bg-white mt-4">
+      <div class="container">
+        
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-pills mb-4" id="productDetailTabs" role="tablist" style="border-bottom: 2px solid #e5e7eb;">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active px-4 py-2" id="desc-tab" data-bs-toggle="pill" data-bs-target="#desc-content" type="button" role="tab" style="border-radius: 0; border-bottom: 3px solid transparent;">
+              <i class="fas fa-info-circle"></i> Description
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link px-4 py-2" id="specs-tab" data-bs-toggle="pill" data-bs-target="#specs-content" type="button" role="tab" style="border-radius: 0; border-bottom: 3px solid transparent;">
+              <i class="fas fa-list"></i> Specifications
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link px-4 py-2" id="ship-tab" data-bs-toggle="pill" data-bs-target="#ship-content" type="button" role="tab" style="border-radius: 0; border-bottom: 3px solid transparent;">
+              <i class="fas fa-shipping-fast"></i> Shipping & Returns
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tabs Content -->
+        <div class="tab-content" id="productDetailTabsContent">
+          
+          <!-- Description Tab -->
+          <div class="tab-pane fade show active" id="desc-content" role="tabpanel">
+            <div class="card border-0 shadow-sm p-4">
+              <h5 class="mb-3"><i class="fas fa-tag text-primary"></i> Product Description</h5>
+              <p style="line-height: 1.8; font-size: 15px;">{{ product.product_desription }}</p>
+              
+              <div class="mt-4">
+                <h6 class="mb-3 text-uppercase" style="color: #6b7280; font-weight: 600;">Key Highlights</h6>
+                <ul style="list-style: none; padding-left: 0;">
+                  <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Premium quality materials for durability</li>
+                  <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Perfect for everyday use</li>
+                  <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Available in multiple sizes and colors</li>
+                  <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Easy to maintain and care for</li>
+                  <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Trusted by thousands of customers</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Specifications Tab -->
+          <div class="tab-pane fade" id="specs-content" role="tabpanel">
+            <div class="card border-0 shadow-sm p-4">
+              <h5 class="mb-3"><i class="fas fa-clipboard-list text-primary"></i> Product Specifications</h5>
+              <table class="table table-striped">
+                <tbody>
+                  <tr>
+                    <td width="30%" style="font-weight: 600; color: #374151;">Product Name</td>
+                    <td>{{ product.product_name }}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #374151;">Category</td>
+                    <td>{{ product.category.category_name }}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #374151;">Price</td>
+                    <td><strong class="text-primary">₹{{ product.price }}</strong></td>
+                  </tr>
+                  {% if product.color_variant.exists %}
+                  <tr>
+                    <td style="font-weight: 600; color: #374151;">Available Colors</td>
+                    <td>{{ product.color_variant.count }} color options</td>
+                  </tr>
+                  {% endif %}
+                  {% if product.size_variant.exists %}
+                  <tr>
+                    <td style="font-weight: 600; color: #374151;">Available Sizes</td>
+                    <td>
+                      {% for size in product.size_variant.all %}
+                        <span class="badge bg-secondary me-1">{{ size.size_name }}</span>
+                      {% endfor %}
+                    </td>
+                  </tr>
+                  {% endif %}
+                  <tr>
+                    <td style="font-weight: 600; color: #374151;">Stock Status</td>
+                    <td>
+                      {% if product.stock > 0 %}
+                        <span class="badge bg-success">In Stock ({{ product.stock }} units)</span>
+                      {% else %}
+                        <span class="badge bg-danger">Out of Stock</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #374151;">Brand</td>
+                    <td>RetailX Premium</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #374151;">Country of Origin</td>
+                    <td>India</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #374151;">Warranty</td>
+                    <td>1 Year Manufacturer Warranty</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Shipping & Returns Tab -->
+          <div class="tab-pane fade" id="ship-content" role="tabpanel">
+            <div class="card border-0 shadow-sm p-4">
+              <h5 class="mb-4"><i class="fas fa-shipping-fast text-primary"></i> Shipping & Returns Policy</h5>
+              
+              <div class="mb-4">
+                <h6 class="text-uppercase mb-3" style="color: #6b7280; font-weight: 600;"><i class="fas fa-box me-2"></i>Shipping Information</h6>
+                <ul style="line-height: 2;">
+                  <li><strong>Free Delivery:</strong> On all orders above ₹999</li>
+                  <li><strong>Standard Delivery:</strong> 5-7 business days</li>
+                  <li><strong>Express Delivery:</strong> 2-3 business days (₹99 extra)</li>
+                  <li><strong>Order Tracking:</strong> Real-time tracking available</li>
+                  <li><strong>Packaging:</strong> Secure and eco-friendly packaging</li>
+                </ul>
+              </div>
+
+              <div class="mb-4">
+                <h6 class="text-uppercase mb-3" style="color: #6b7280; font-weight: 600;"><i class="fas fa-undo me-2"></i>Returns & Exchange</h6>
+                <ul style="line-height: 2;">
+                  <li><strong>Return Window:</strong> 7 days from delivery date</li>
+                  <li><strong>Condition:</strong> Product must be unused with original tags</li>
+                  <li><strong>Refund:</strong> Full refund within 5-7 business days</li>
+                  <li><strong>Exchange:</strong> Free size/color exchange available</li>
+                  <li><strong>Pickup:</strong> Free pickup for returns and exchanges</li>
+                </ul>
+              </div>
+
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Note:</strong> For hygiene reasons, certain products like innerwear and cosmetics are not eligible for return or exchange.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== RELATED PRODUCTS ========== -->
+    <h3 class="title mt-5 mb-3">Related Products</h3>
+    {% if related_products %}
+      {% with related_products as list_products %}
+        {% include 'product_parts/product_list.html' %}
+      {% endwith %}
+    {% else %}
+      <p class="text-muted">No related products found.</p>
+    {% endif %}
+
+    <!-- ========== RECENTLY VIEWED ========== -->
+    <div class="recently-viewed" id="recentlyViewed" style="display:none;">
+      <h3 class="title mb-3">Recently Viewed</h3>
+      <div class="row" id="recentlyViewedProducts"></div>
+    </div>
+
+    <hr class="my-5">
+
+    <!-- ========== REVIEWS ========== -->
+    <h3 class="title mb-3">Customer Reviews</h3>
+
+    {% for review in product.reviews.all %}
+    <div class="review-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <strong>{{ review.user.get_full_name|default:review.user.username }}</strong>
+          <div class="text-warning small">
+            {% for i in "12345" %}
+              {% if forloop.counter <= review.stars %}★{% else %}☆{% endif %}
+            {% endfor %}
+          </div>
+          <small class="text-muted">{{ review.date_added|date:"M d, Y" }}</small>
+          <p class="mt-2">{{ review.content }}</p>
+        </div>
+        <div class="d-flex gap-2">
+          {% if request.user.is_authenticated %}
+            <button class="like-btn" onclick="toggleLike('{{ review.uid }}')">
+              <i class="fas fa-thumbs-up"></i>
+              <span id="like-{{ review.uid }}">{{ review.like_count }}</span>
+            </button>
+            <button class="dislike-btn" onclick="toggleDislike('{{ review.uid }}')">
+              <i class="fas fa-thumbs-down"></i>
+              <span id="dislike-{{ review.uid }}">{{ review.dislike_count }}</span>
+            </button>
+          {% endif %}
+          {% if review.user == request.user %}
+            <button class="btn btn-link text-danger p-0" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#deleteModal"
+                    onclick="setDeleteUrl('{% url 'delete_review' product.slug review.uid %}')">
+              <i class="fas fa-trash"></i>
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-center text-muted py-4">No reviews yet. Be the first!</p>
+    {% endfor %}
+
+    <!-- ========== REVIEW FORM ========== -->
+    {% if request.user.is_authenticated %}
+    <div class="review-form-card mt-4">
+      <h4 class="mb-3">Write a Review</h4>
+      <form method="POST" id="reviewForm">
+        {% csrf_token %}
+        
+        <div class="text-center mb-3">
+          <label class="fw-bold mb-2">Your Rating</label>
+          <div class="stars" id="starRating">
+            <i class="fas fa-star star" data-rating="1"></i>
+            <i class="fas fa-star star" data-rating="2"></i>
+            <i class="fas fa-star star" data-rating="3"></i>
+            <i class="fas fa-star star" data-rating="4"></i>
+            <i class="fas fa-star star" data-rating="5"></i>
+          </div>
+          <input type="hidden" name="stars" id="ratingValue" value="0">
+          <div class="mt-2"><small id="ratingText" class="text-muted">Click to rate</small></div>
+        </div>
+
+        <div class="mb-3">
+          <label class="fw-bold mb-2">Your Review</label>
+          <textarea name="content" 
+                    id="reviewContent"
+                    class="form-control" 
+                    rows="4" 
+                    placeholder="Share your experience..."
+                    maxlength="500"
+                    required></textarea>
+          <small class="text-muted">Min 10 characters</small>
+        </div>
+
+        <button type="submit" class="btn-primary-custom" id="submitReview" disabled>
+          <i class="fas fa-paper-plane"></i> Submit Review
+        </button>
+      </form>
+    </div>
+    {% else %}
+    <div class="text-center py-4 border rounded">
+      <i class="fas fa-user-circle fa-3x text-primary mb-3"></i>
+      <h5>Sign in to Write a Review</h5>
+      <a href="{% url 'login' %}" class="btn-primary-custom mt-2">
+        <i class="fas fa-sign-in-alt"></i> Sign In
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+
+<!-- ========== LIGHTBOX ========== -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <button class="lightbox-nav lightbox-prev" onclick="prevImage()">‹</button>
+  <button class="lightbox-nav lightbox-next" onclick="nextImage()">›</button>
+  <div class="lightbox-content">
+    <img class="lightbox-img" id="lightboxImg" src="" alt="Product">
+  </div>
+</div>
+
+<!-- ========== SIZE GUIDE MODAL ========== -->
+<div class="modal fade" id="sizeGuideModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-ruler"></i> Size Guide</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <table class="size-guide-table">
+          <thead>
+            <tr>
+              <th>Size</th>
+              <th>US</th>
+              <th>UK</th>
+              <th>EU</th>
+              <th>CM</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>XS</td><td>6</td><td>4</td><td>34</td><td>22.5</td></tr>
+            <tr><td>S</td><td>7</td><td>5</td><td>35-36</td><td>23-23.5</td></tr>
+            <tr><td>M</td><td>8-9</td><td>6-7</td><td>37-38</td><td>24-24.5</td></tr>
+            <tr><td>L</td><td>10-11</td><td>8-9</td><td>39-40</td><td>25-26</td></tr>
+            <tr><td>XL</td><td>12</td><td>10</td><td>41-42</td><td>26.5-27</td></tr>
+          </tbody>
+        </table>
+        <div class="mt-3">
+          <h6>How to Measure:</h6>
+          <ol class="small">
+            <li>Stand with your heel against a wall</li>
+            <li>Measure from wall to longest toe</li>
+            <li>Match measurement to size chart above</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== NOTIFY MODAL ========== -->
+<div class="modal fade" id="notifyModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-bell"></i> Notify Me</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Get notified when this product is back in stock!</p>
+        <input type="email" class="form-control" id="notifyEmail" placeholder="Enter your email">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-primary-custom" onclick="subscribeNotification()">
+          Subscribe
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== DELETE MODAL ========== -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Delete</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete this review?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteForm" method="POST" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== JAVASCRIPT ==================== -->
 <script>
-  function get_correct_price(selected_size) {
-    const urlParams = new URLSearchParams(window.location.search);
-    urlParams.set("size", selected_size);
-    window.location.search = urlParams.toString();
+// ========== CONFIG ==========
+const STOCK = {{ product.stock }};
+const PRODUCT_ID = '{{ product.uid }}';
+const productImages = [
+  {% for img in product.product_images.all %}'{{ img.image_url }}'{% if not forloop.last %},{% endif %}{% endfor %}
+];
+
+let currentImageIndex = 0;
+let qty = 1;
+
+// ========== IMAGE GALLERY ==========
+function changeImage(url, index) {
+  document.getElementById('mainImage').src = url;
+  currentImageIndex = index;
+  
+  document.querySelectorAll('.item-thumb').forEach((t, i) => {
+    t.classList.toggle('active', i === index);
+  });
+}
+
+// ========== LIGHTBOX ==========
+function openLightbox(index) {
+  currentImageIndex = index;
+  document.getElementById('lightboxImg').src = productImages[index];
+  document.getElementById('lightbox').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+  document.body.style.overflow = 'auto';
+}
+
+function nextImage() {
+  currentImageIndex = (currentImageIndex + 1) % productImages.length;
+  document.getElementById('lightboxImg').src = productImages[currentImageIndex];
+}
+
+function prevImage() {
+  currentImageIndex = (currentImageIndex - 1 + productImages.length) % productImages.length;
+  document.getElementById('lightboxImg').src = productImages[currentImageIndex];
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('lightbox').classList.contains('active')) return;
+  if (e.key === 'ArrowRight') nextImage();
+  if (e.key === 'ArrowLeft') prevImage();
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// ========== COLOR SELECTION ==========
+function selectColor(element, colorName) {
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+  element.classList.add('active');
+  document.getElementById('selectedColor').value = colorName;
+}
+
+// ========== SIZE & PRICE ==========
+function updatePriceAndCart(size) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('size', size);
+  window.location.href = url.toString();
+}
+
+// ========== QUANTITY CONTROLS ==========
+document.addEventListener('DOMContentLoaded', () => {
+  const qtyInput = document.getElementById('quantity');
+  const plusBtn = document.getElementById('qtyPlus');
+  const minusBtn = document.getElementById('qtyMinus');
+  const cartBtn = document.getElementById('addToCartBtn');
+
+  function updateQty() {
+    qtyInput.value = qty;
+    minusBtn.disabled = (qty <= 1);
+    plusBtn.disabled = (STOCK === 0 || qty >= STOCK);
+    updateCartUrl();
   }
 
-  function updateMainImage(src) {
-    document.getElementById("mainImage").src = src;
+  function updateCartUrl() {
+    const base = cartBtn.getAttribute('href').split('&qty')[0];
+    cartBtn.setAttribute('href', `${base}&qty=${qty}`);
   }
 
-  function setDeleteAction(actionUrl) {
-    const deleteForm = document.getElementById("deleteReviewForm");
-    deleteForm.action = actionUrl;
+  plusBtn.addEventListener('click', () => {
+    if (qty < STOCK) {
+      qty++;
+      updateQty();
+    }
+  });
+
+  minusBtn.addEventListener('click', () => {
+    if (qty > 1) {
+      qty--;
+      updateQty();
+    }
+  });
+
+  // Out of stock handling
+  if (STOCK === 0) {
+    cartBtn.classList.add('disabled');
+    cartBtn.innerHTML = '<i class="fas fa-times-circle"></i> Out of Stock';
+    cartBtn.style.pointerEvents = 'none';
+    plusBtn.disabled = true;
+    minusBtn.disabled = true;
   }
 
-  function toggleLike(reviewId) {
-    fetch(`/product/like-review/${reviewId}/`, {
-      method: "POST",
-      headers: { "X-CSRFToken": "{{ csrf_token }}" },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        const likeElement = document.getElementById(`like-count-${reviewId}`);
-        const dislikeElement = document.getElementById(`dislike-count-${reviewId}`);
-        if (likeElement && dislikeElement) {
-          likeElement.innerText = data.likes;
-          dislikeElement.innerText = data.dislikes;
-        } else {
-          console.error("Like or Dislike element not found in DOM.");
-        }
-      })
-      .catch((error) => console.error("Error:", error));
+  updateQty();
+
+  // Size validation
+  const sizeRadios = document.querySelectorAll('input[name="selected_size"]');
+  if (sizeRadios.length > 0) {
+    const hasSelected = Array.from(sizeRadios).some(r => r.checked);
+    if (!hasSelected) {
+      cartBtn.classList.add('disabled');
+      cartBtn.style.pointerEvents = 'none';
+      cartBtn.innerHTML = '<i class="fas fa-info-circle"></i> Select Size First';
+    }
   }
+});
 
-  function toggleDislike(reviewId) {
-    fetch(`/product/dislike-review/${reviewId}/`, {
-      method: "POST",
-      headers: { "X-CSRFToken": "{{ csrf_token }}" },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        const likeElement = document.getElementById(`like-count-${reviewId}`);
-        const dislikeElement = document.getElementById(`dislike-count-${reviewId}`);
-        if (likeElement && dislikeElement) {
-          likeElement.innerText = data.likes;
-          dislikeElement.innerText = data.dislikes;
-        } else {
-          console.error("Like or Dislike element not found in DOM.");
-        }
-      })
-      .catch((error) => console.error("Error:", error));
+// ========== ADD TO CART ==========
+function addToCart() {
+  // Check if user is authenticated
+  {% if not user.is_authenticated %}
+    alert('Please login to add items to cart');
+    window.location.href = '{% url "login" %}?next={{ request.path }}';
+    return;
+  {% endif %}
+  
+  // Get selected size
+  const sizeRadios = document.querySelectorAll('input[name="selected_size"]');
+  let selectedSize = null;
+  
+  if (sizeRadios.length > 0) {
+    const checkedRadio = Array.from(sizeRadios).find(r => r.checked);
+    if (!checkedRadio) {
+      alert('Please select a size before adding to cart');
+      return;
+    }
+    selectedSize = checkedRadio.value;
   }
+  
+  // Check stock
+  if (STOCK === 0) {
+    alert('This product is out of stock');
+    return;
+  }
+  
+  // Redirect to add to cart URL
+  const url = selectedSize 
+    ? `/accounts/add-to-cart/{{ product.uid }}/?size=${selectedSize}`
+    : `/accounts/add-to-cart/{{ product.uid }}/`;
+  window.location.href = url;
+}
 
-  document.addEventListener("DOMContentLoaded", function () {
-    const mainImage = document.getElementById("mainImage");
+// ========== ADD TO WISHLIST ==========
+function addToWishlist() {
+  // Check if user is authenticated
+  {% if not user.is_authenticated %}
+    alert('Please login to add items to wishlist');
+    window.location.href = '{% url "login" %}?next={{ request.path }}';
+    return;
+  {% endif %}
+  
+  // Get selected size
+  const sizeRadios = document.querySelectorAll('input[name="selected_size"]');
+  let selectedSize = null;
+  
+  if (sizeRadios.length > 0) {
+    const checkedRadio = Array.from(sizeRadios).find(r => r.checked);
+    if (!checkedRadio) {
+      alert('Please select a size before adding to wishlist');
+      return;
+    }
+    selectedSize = checkedRadio.value;
+  }
+  
+  // Redirect to add to wishlist URL
+  const url = selectedSize 
+    ? `/product/wishlist/add/{{ product.uid }}/?size=${selectedSize}`
+    : `/product/wishlist/add/{{ product.uid }}/`;
+  window.location.href = url;
+}
 
-    mainImage.addEventListener("click", function () {
-      if (mainImage.classList.contains("zoomed-in")) {
-        mainImage.classList.remove("zoomed-in");
-      } else {
-        mainImage.classList.add("zoomed-in");
-      }
+// ========== REVIEWS ==========
+function toggleLike(uid) {
+  fetch(`/product/like-review/${uid}/`, {
+    method: 'POST',
+    headers: {'X-CSRFToken': '{{ csrf_token }}'}
+  })
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById(`like-${uid}`).textContent = d.likes;
+    document.getElementById(`dislike-${uid}`).textContent = d.dislikes;
+  });
+}
+
+function toggleDislike(uid) {
+  fetch(`/product/dislike-review/${uid}/`, {
+    method: 'POST',
+    headers: {'X-CSRFToken': '{{ csrf_token }}'}
+  })
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById(`like-${uid}`).textContent = d.likes;
+    document.getElementById(`dislike-${uid}`).textContent = d.dislikes;
+  });
+}
+
+function setDeleteUrl(url) {
+  document.getElementById('deleteForm').action = url;
+}
+
+// ========== REVIEW FORM ==========
+const ratingTexts = {
+  0: 'Click to rate',
+  1: 'Poor',
+  2: 'Fair',
+  3: 'Good',
+  4: 'Very Good',
+  5: 'Excellent'
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const stars = document.querySelectorAll('.star');
+  const ratingValue = document.getElementById('ratingValue');
+  const ratingText = document.getElementById('ratingText');
+  const reviewContent = document.getElementById('reviewContent');
+  const submitBtn = document.getElementById('submitReview');
+
+  stars.forEach((star, i) => {
+    star.addEventListener('mouseenter', () => {
+      stars.forEach((s, j) => {
+        s.classList.toggle('hover', j <= i);
+      });
+      ratingText.textContent = ratingTexts[i + 1];
+    });
+
+    star.addEventListener('mouseleave', () => {
+      stars.forEach(s => s.classList.remove('hover'));
+      const val = parseInt(ratingValue.value);
+      ratingText.textContent = ratingTexts[val];
+    });
+
+    star.addEventListener('click', () => {
+      const rating = i + 1;
+      ratingValue.value = rating;
+      stars.forEach((s, j) => {
+        s.classList.toggle('active', j < rating);
+      });
+      ratingText.textContent = ratingTexts[rating];
+      validateReview();
     });
   });
 
-  // Modern Review Form JavaScript
-  document.addEventListener('DOMContentLoaded', function () {
-    const stars = document.querySelectorAll('.star');
-    const ratingValue = document.getElementById('ratingValue');
-    const ratingText = document.getElementById('ratingText');
-    const reviewContent = document.getElementById('reviewContent');
-    const submitBtn = document.querySelector('.btn-submit');
-    const reviewForm = document.getElementById('reviewForm');
+  if (reviewContent) {
+    reviewContent.addEventListener('input', validateReview);
+  }
 
-    // Rating texts for different star values
-    const ratingTexts = {
-      0: 'Click to rate',
-      1: 'Poor - Not satisfied',
-      2: 'Fair - Below expectations',
-      3: 'Good - Meets expectations',
-      4: 'Very Good - Exceeds expectations',
-      5: 'Excellent - Outstanding product!'
-    };
+  function validateReview() {
+    const rating = parseInt(ratingValue?.value || 0);
+    const content = reviewContent?.value.trim() || '';
+    const isValid = rating > 0 && content.length >= 10;
+    if (submitBtn) submitBtn.disabled = !isValid;
+  }
+});
 
-    // Star rating functionality
-    if (stars.length > 0) {
-      stars.forEach((star, index) => {
-        // Mouse enter - show preview
-        star.addEventListener('mouseenter', function () {
-          highlightStars(index + 1, 'hover');
-          updateRatingText(index + 1);
-        });
-
-        // Mouse leave - reset to current rating
-        star.addEventListener('mouseleave', function () {
-          const currentRating = parseInt(ratingValue.value) || 0;
-          highlightStars(currentRating, 'active');
-          updateRatingText(currentRating);
-        });
-
-        // Click - set rating
-        star.addEventListener('click', function () {
-          const rating = index + 1;
-          ratingValue.value = rating;
-          highlightStars(rating, 'active');
-          updateRatingText(rating);
-          validateForm();
-
-          // Add a little animation
-          star.style.transform = 'scale(1.3)';
-          setTimeout(() => {
-            star.style.transform = '';
-          }, 200);
-        });
-      });
+// ========== NOTIFY WHEN AVAILABLE ==========
+function subscribeNotification() {
+  const email = document.getElementById('notifyEmail').value.trim();
+  if (!email) {
+    alert('Please enter your email address');
+    return;
+  }
+  
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    alert('Please enter a valid email address');
+    return;
+  }
+  
+  const productUid = '{{ product.uid }}';
+  
+  fetch(`/product/notify/${productUid}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      email: email
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      alert(d.message);
+      document.getElementById('notifyEmail').value = '';
+      const modalEl = document.getElementById('notifyModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+    } else {
+      alert(d.message || 'Error subscribing. Please try again.');
     }
+  })
+  .catch(err => {
+    console.error('Error:', err);
+    alert('Error subscribing. Please try again.');
+  });
+}
 
-    // Content validation
-    if (reviewContent) {
-      reviewContent.addEventListener('input', validateForm);
+// ========== ASK QUESTION ==========
+function submitQuestion() {
+  const question = document.getElementById('questionText').value.trim();
+  if (!question) {
+    alert('Please enter your question');
+    return;
+  }
+
+  fetch('/product/ask-question/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      product_id: PRODUCT_ID,
+      question: question
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    alert(d.message || 'Question submitted!');
+    document.getElementById('questionText').value = '';
+  })
+  .catch(() => alert('Error submitting question'));
+}
+
+// ========== RECENTLY VIEWED ==========
+function addToRecentlyViewed() {
+  let recent = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+  recent = recent.filter(p => p.id !== PRODUCT_ID);
+  recent.unshift({
+    id: PRODUCT_ID,
+    name: '{{ product.product_name }}',
+    image: '{{ product.product_images.first.image_url }}',
+    price: '{{ product.price }}',
+    url: '{{ request.path }}'
+  });
+  recent = recent.slice(0, 4);
+  localStorage.setItem('recentlyViewed', JSON.stringify(recent));
+}
+
+function showRecentlyViewed() {
+  const recent = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+  const filtered = recent.filter(p => p.id !== PRODUCT_ID);
+  
+  if (filtered.length === 0) return;
+
+  const container = document.getElementById('recentlyViewedProducts');
+  container.innerHTML = filtered.map(p => `
+    <div class="col-md-3 col-6 mb-3">
+      <a href="${p.url}" class="text-decoration-none">
+        <div class="product-card-mini">
+          <img src="${p.image}" alt="${p.name}" loading="lazy">
+          <h6 class="mt-2 mb-1">${p.name}</h6>
+          <p class="text-primary mb-0">₹${p.price}</p>
+        </div>
+      </a>
+    </div>
+  `).join('');
+
+  document.getElementById('recentlyViewed').style.display = 'block';
+}
+
+// ========== IMAGE LAZY LOADING ==========
+document.addEventListener('DOMContentLoaded', () => {
+  const images = document.querySelectorAll('img[loading="lazy"]');
+  images.forEach(img => {
+    img.addEventListener('load', () => {
+      img.classList.add('loaded');
+    });
+    if (img.complete) {
+      img.classList.add('loaded');
     }
-
-    // Form validation
-    function validateForm() {
-      const rating = parseInt(ratingValue.value) || 0;
-      const content = reviewContent ? reviewContent.value.trim() : '';
-
-      const isValid = rating > 0 && content.length >= 10;
-
-      if (submitBtn) {
-        submitBtn.disabled = !isValid;
-
-        if (isValid) {
-          submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Submit Review';
-        } else {
-          if (rating === 0) {
-            submitBtn.innerHTML = '<i class="fas fa-star me-1"></i>Please rate first';
-          } else if (content.length < 10) {
-            submitBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Write more details';
-          }
-        }
-      }
-    }
-
-    // Highlight stars function
-    function highlightStars(rating, className) {
-      stars.forEach((star, index) => {
-        star.classList.remove('active', 'hover');
-        if (index < rating) {
-          star.classList.add(className);
-        }
-      });
-    }
-
-    // Update rating text
-    function updateRatingText(rating) {
-      if (ratingText) {
-        ratingText.textContent = ratingTexts[rating] || ratingTexts[0];
-        ratingText.classList.toggle('has-rating', rating > 0);
-      }
-    }
-
-    // Form submission handling
-    if (reviewForm) {
-      reviewForm.addEventListener('submit', function (e) {
-        const rating = parseInt(ratingValue.value) || 0;
-        const content = reviewContent ? reviewContent.value.trim() : '';
-
-        if (rating === 0) {
-          e.preventDefault();
-          alert('Please select a rating before submitting your review.');
-          return;
-        }
-
-        if (content.length < 10) {
-          e.preventDefault();
-          alert('Please write at least 10 characters in your review.');
-          reviewContent.focus();
-          return;
-        }
-
-        // Add submission animation
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Submitting...';
-        submitBtn.disabled = true;
-
-        // Add success animation to form
-        reviewForm.classList.add('form-submitted');
-      });
-    }
-
-    // Initial validation
-    validateForm();
   });
 
-  // Reset form function
-  function resetForm() {
-    const reviewForm = document.getElementById('reviewForm');
-    const stars = document.querySelectorAll('.star');
-    const ratingValue = document.getElementById('ratingValue');
-    const ratingText = document.getElementById('ratingText');
-    const reviewContent = document.getElementById('reviewContent');
-    const charCount = document.getElementById('charCount');
-    const submitBtn = document.querySelector('.btn-submit');
-    const recommendCheckbox = document.getElementById('recommendProduct');
-
-    if (reviewForm) {
-      reviewForm.reset();
-    }
-
-    // Reset rating
-    if (ratingValue) {
-      ratingValue.value = '0';
-    }
-
-    // Reset stars
-    stars.forEach(star => {
-      star.classList.remove('active', 'hover');
-    });
-
-    // Reset rating text
-    if (ratingText) {
-      ratingText.textContent = 'Click to rate';
-      ratingText.classList.remove('has-rating');
-    }
-
-    // Reset submit button
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Submit Review';
-    }
-
-    // Reset checkbox
-    if (recommendCheckbox) {
-      recommendCheckbox.checked = false;
-    }
-
-    // Focus on first star
-    if (stars.length > 0) {
-      stars[0].focus();
-    }
-  }
+  addToRecentlyViewed();
+  showRecentlyViewed();
+});
 </script>
 
 {% endblock %}

@@ -10,7 +10,8 @@ urlpatterns = [
     path('activate/<email_token>/', activate_email_account, name="activate_email"),
 
     # Profile management urls with profile, change-password, and shipping-address
-    path('profile/<str:username>/', profile_view, name='profile'),
+    path('profile/', profile_view, name='profile'),  # Without username - uses logged-in user
+    path('profile/<str:username>/', profile_view, name='profile_with_username'),
     path('change-password/', change_password, name='change_password'),
     path('shipping-address/', update_shipping_address, name='shipping-address'),
 

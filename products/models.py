@@ -49,6 +49,7 @@ class Product(BaseModel):
     color_variant = models.ManyToManyField(ColorVariant, blank=True)
     size_variant = models.ManyToManyField(SizeVariant, blank=True)
     newest_product = models.BooleanField(default=False)
+    stock = models.IntegerField(default=50)  # Default stock level
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.product_name)
@@ -56,10 +57,10 @@ class Product(BaseModel):
 
     def __str__(self) -> str:
         return self.product_name
-
+# dynamic price based on size
     def get_product_price_by_size(self, size):
         return self.price + SizeVariant.objects.get(size_name=size).price
-
+# dynamic rating based on reviews
     def get_rating(self):
         total = sum(int(review['stars']) for review in self.reviews.values())
 
@@ -122,3 +123,19 @@ class Wishlist(BaseModel):
 
     def __str__(self) -> str:
         return f'{self.user.username} - {self.product.product_name} - {self.size_variant.size_name if self.size_variant else "No Size"}'
+
+
+class StockNotification(BaseModel):
+    """Model to store email notifications for out-of-stock products"""
+    email = models.EmailField()
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="stock_notifications")
+    notified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('email', 'product')
+        ordering = ['-created_at']
+
+    def __str__(self) -> str:
+        return f'{self.email} - {self.product.product_name}'

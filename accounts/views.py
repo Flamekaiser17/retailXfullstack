@@ -183,12 +183,20 @@ def cart(request):
                 request, 'Total amount in cart is less than the minimum required amount (1.00 INR). Please add a product to the cart.')
             return redirect('index')
 
-        client = razorpay.Client(
-            auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_SECRET_KEY))
-        payment = client.order.create(
-            {'amount': cart_total_in_paise, 'currency': 'INR', 'payment_capture': 1})
-        cart_obj.razorpay_order_id = payment['id']
-        cart_obj.save()
+        # Try to create Razorpay order, but make it optional
+        try:
+            client = razorpay.Client(
+                auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_SECRET_KEY))
+            payment = client.order.create(
+                {'amount': cart_total_in_paise, 'currency': 'INR', 'payment_capture': 1})
+            cart_obj.razorpay_order_id = payment['id']
+            cart_obj.save()
+        except Exception as e:
+            # Razorpay not configured or authentication failed
+            # Cart will still work, just without payment integration
+            print(f"Razorpay error: {str(e)}")
+            messages.info(request, 'Payment gateway not configured. Contact admin to enable online payments.')
+            payment = None
 
     context = {
         'cart': cart_obj,
@@ -281,8 +289,19 @@ def download_invoice(request, order_id):
 
 
 @login_required
-def profile_view(request, username):
-    user_name = get_object_or_404(User, username=username)
+def profile_view(request, username=None):
+    # If no username provided, use logged-in user's username
+    if not username:
+        username = request.user.username
+    
+    # Get the user whose profile is being viewed
+    profile_user = get_object_or_404(User, username=username)
+    
+    # Only allow users to edit their own profile
+    if request.user != profile_user:
+        messages.warning(request, "You can only edit your own profile.")
+        return redirect('profile', username=request.user.username)
+    
     user = request.user
     profile = user.profile
 
@@ -300,10 +319,35 @@ def profile_view(request, username):
                 request, 'Your profile has been updated successfully!')
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
+    # Get statistics for dashboard
+    cart_items_count = 0
+    wishlist_count = 0
+    orders_count = 0
+    
+    try:
+        cart = Cart.objects.filter(user=user, is_paid=False).first()
+        if cart:
+            cart_items_count = cart.cart_items.count()
+    except:
+        pass
+    
+    try:
+        wishlist_count = Wishlist.objects.filter(user=user).count()
+    except:
+        pass
+    
+    try:
+        orders_count = Order.objects.filter(user=user).count()
+    except:
+        pass
+
     context = {
-        'user_name': user_name,
+        'user_name': profile_user,
         'user_form': user_form,
-        'profile_form': profile_form
+        'profile_form': profile_form,
+        'cart_items_count': cart_items_count,
+        'wishlist_count': wishlist_count,
+        'orders_count': orders_count,
     }
 
     return render(request, 'accounts/profile.html', context)

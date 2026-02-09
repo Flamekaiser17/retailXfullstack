@@ -1,41 +1,137 @@
 {% extends "base/base.html" %}
-{% block title %}Profile{% endblock title %}
+{% block title %}My Account - RetailX{% endblock title %}
 {% load crispy_forms_tags %} {% load static %} {% block start %}
 
 <style>
+  :root {
+    --primary-color: #1a1a1a;
+    --primary-dark: #2d2d2d;
+    --accent-color: #6b7280;
+    --accent-dark: #4a4a4a;
+    --text-dark: #1e293b;
+    --text-muted: #64748b;
+    --bg-light: #f8fafc;
+    --border-color: #e2e8f0;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+  }
+
+  .dashboard-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--border-color);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 1rem;
+  }
+
+  .stat-icon.orders {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+  }
+
+  .stat-icon.wishlist {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+  }
+
+  .stat-icon.cart {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+  }
+
+  .stat-icon.profile {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-label {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .profile-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+  }
+
+  .profile-card-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    padding: 1.5rem;
+    font-weight: 600;
+    font-size: 1.125rem;
+  }
+
+  .profile-card-body {
+    padding: 2rem;
+  }
+
   .img-account-profile {
-    height: 10rem;
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border: 4px solid white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   }
 
   .rounded-circle {
     border-radius: 50% !important;
   }
 
-  .card {
-    box-shadow: 0 0.15rem 1.75rem 0 rgb(33 40 50 / 15%);
+  .nav-borders {
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 2rem;
   }
 
-  .card .card-header {
+  .nav-borders .nav-link {
+    color: var(--text-muted);
+    border-bottom: 3px solid transparent;
+    padding: 1rem 1.5rem;
+    margin: 0;
+    transition: all 0.3s ease;
     font-weight: 500;
   }
 
-  .card-header:first-child {
-    border-radius: 0.35rem 0.35rem 0 0;
-  }
-
-  .card-header {
-    padding: 1rem 1.35rem;
-    margin-bottom: 0;
-    background-color: rgba(33, 40, 50, 0.03);
-    border-bottom: 1px solid rgba(33, 40, 50, 0.125);
-  }
-
-  /* Unified Color System */
-  :root {
-    --primary-color: #6366f1;
-    --accent-color: #fbbf24;
-    --text-dark: #1e293b;
-    --text-muted: #69707a;
+  .nav-borders .nav-link:hover {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
   }
 
   .nav-borders .nav-link.active {
@@ -43,76 +139,233 @@
     border-bottom-color: var(--primary-color);
   }
 
-  .nav-borders .nav-link {
-    color: var(--text-muted);
-    border-bottom-width: 0.125rem;
-    border-bottom-style: solid;
-    border-bottom-color: transparent;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    padding-left: 0;
-    padding-right: 0;
-    margin-left: 1rem;
-    margin-right: 1rem;
-    transition: all 0.3s ease;
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .nav-borders .nav-link:hover {
-    color: var(--accent-color);
-    border-bottom-color: var(--accent-color);
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+  }
+
+  .quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-dark);
+    transition: all 0.3s ease;
+    margin-bottom: 0.75rem;
+  }
+
+  .quick-action-btn:hover {
+    background: white;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateX(4px);
+  }
+
+  .quick-action-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .completion-bar {
+    background: var(--bg-light);
+    border-radius: 8px;
+    height: 8px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+  }
+
+  .completion-progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success-color), #34d399);
+    transition: width 0.5s ease;
   }
 </style>
 
-<section class="section-content padding-bottom">
-  <div class="container-xl px-4 mt-4">
+<!-- Dashboard Header -->
+<section class="section-content padding-y bg-light">
+  <div class="container">
     {% include "base/alert.html" %}
+    
+    <div class="dashboard-header">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h2 class="mb-2">Welcome back, {{ user.first_name|default:user.username }}! 👋</h2>
+          <p class="mb-0 opacity-75">Manage your account, orders, and preferences</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+          <div class="text-white-50">Member since</div>
+          <div class="fw-bold">{{ user.date_joined|date:"F Y" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
     <nav class="nav nav-borders">
-      <a class="nav-link active ms-0" href="{% url 'profile' username=user.username %}">Profile</a>
-      <a class="nav-link ms-0" href="{% url 'shipping-address' %}">Address</a>
-      <a class="nav-link ms-0" href="{% url 'change_password' %}">Security</a>
+      <a class="nav-link active" href="{% url 'profile' username=user.username %}">
+        <i class="fa fa-user me-2"></i>Dashboard
+      </a>
+      <a class="nav-link" href="{% url 'order_history' %}">
+        <i class="fa fa-shopping-bag me-2"></i>Orders
+      </a>
+      <a class="nav-link" href="{% url 'shipping-address' %}">
+        <i class="fa fa-map-marker me-2"></i>Addresses
+      </a>
+      <a class="nav-link" href="{% url 'change_password' %}">
+        <i class="fa fa-lock me-2"></i>Security
+      </a>
     </nav>
 
-    <hr class="mt-0 mb-4" />
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+      <div class="col-md-3 mb-3">
+        <div class="stat-card">
+          <div class="stat-icon orders">
+            <i class="fa fa-shopping-bag"></i>
+          </div>
+          <div class="stat-value">{{ total_orders|default:0 }}</div>
+          <div class="stat-label">Total Orders</div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="stat-card">
+          <div class="stat-icon wishlist">
+            <i class="fa fa-heart"></i>
+          </div>
+          <div class="stat-value">{{ wishlist_count|default:0 }}</div>
+          <div class="stat-label">Wishlist Items</div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="stat-card">
+          <div class="stat-icon cart">
+            <i class="fa fa-shopping-cart"></i>
+          </div>
+          <div class="stat-value">{{ cart_count|default:0 }}</div>
+          <div class="stat-label">Cart Items</div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="stat-card">
+          <div class="stat-icon profile">
+            <i class="fa fa-star"></i>
+          </div>
+          <div class="stat-value">{{ completion_percentage|default:60 }}%</div>
+          <div class="stat-label">Profile Complete</div>
+          <div class="completion-bar">
+            <div class="completion-progress" style="width: {{ completion_percentage|default:60 }}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <!-- Profile Picture Section -->
     <div class="row">
-      <div class="col-xl-4">
-        <div class="card mb-4 mb-xl-0">
-          <div class="card-header">Profile Picture</div>
-          <div class="card-body text-center">
+      <!-- Profile Information -->
+      <div class="col-xl-8 mb-4">
+        <div class="profile-card">
+          <div class="profile-card-header">
+            <i class="fa fa-user me-2"></i>Account Details
+          </div>
+          <div class="profile-card-body">
             <form method="POST" enctype="multipart/form-data">
               {% csrf_token %}
-
-              {% if user.profile.profile_image %}
-              <img class="img-account-profile rounded-circle mb-2" src="{{ user.profile.profile_image }}"
-                alt="Profile Picture" />
-
-              {% else %}
-              <img class="img-account-profile rounded-circle mb-2" src="{% static 'images/default-profile.png' %}"
-                alt="Default Profile Picture" />
-              {% endif %}
-
-              <div class="small font-italic text-muted mb-4">
-                JPG or PNG no larger than 5 MB
-              </div>
+              {{ user_form|crispy }}
+              {{ profile_form|crispy }}
+              <button class="btn btn-primary mt-3" type="submit">
+                <i class="fa fa-save me-2"></i>Save Changes
+              </button>
             </form>
           </div>
         </div>
       </div>
 
-      <!-- Account Details Section -->
-      <div class="col-xl-8">
-        <div class="card mb-4">
-          <div class="card-header">Account Details</div>
-          <div class="card-body">
+      <!-- Sidebar -->
+      <div class="col-xl-4">
+        <!-- Profile Picture Card -->
+        <div class="profile-card mb-4">
+          <div class="profile-card-header">
+            <i class="fa fa-camera me-2"></i>Profile Picture
+          </div>
+          <div class="profile-card-body text-center">
             <form method="POST" enctype="multipart/form-data">
               {% csrf_token %}
-              {{ user_form|crispy }}
-              {{ profile_form|crispy }}
-              <button class="btn btn-primary" type="submit">
-                Update Profile
-              </button>
+              {% if user.profile.profile_image %}
+              <img class="img-account-profile rounded-circle mb-3" 
+                   src="{{ user.profile.profile_image }}"
+                   alt="Profile Picture" />
+              {% else %}
+              <img class="img-account-profile rounded-circle mb-3" 
+                   src="{% static 'images/default-profile.png' %}"
+                   alt="Default Profile Picture" />
+              {% endif %}
+              <div class="small text-muted mb-3">
+                JPG or PNG no larger than 5 MB
+              </div>
             </form>
+          </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="profile-card">
+          <div class="profile-card-header">
+            <i class="fa fa-bolt me-2"></i>Quick Actions
+          </div>
+          <div class="profile-card-body">
+            <a href="{% url 'order_history' %}" class="quick-action-btn">
+              <div class="quick-action-icon">
+                <i class="fa fa-history"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Order History</div>
+                <small class="text-muted">View past orders</small>
+              </div>
+            </a>
+            <a href="{% url 'shipping-address' %}" class="quick-action-btn">
+              <div class="quick-action-icon">
+                <i class="fa fa-map-marker"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Manage Addresses</div>
+                <small class="text-muted">Update delivery info</small>
+              </div>
+            </a>
+            <a href="{% url 'change_password' %}" class="quick-action-btn">
+              <div class="quick-action-icon">
+                <i class="fa fa-key"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Change Password</div>
+                <small class="text-muted">Update security</small>
+              </div>
+            </a>
+            <a href="{% url 'home' %}" class="quick-action-btn">
+              <div class="quick-action-icon">
+                <i class="fa fa-shopping-bag"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Continue Shopping</div>
+                <small class="text-muted">Browse products</small>
+              </div>
+            </a>
           </div>
         </div>
       </div>

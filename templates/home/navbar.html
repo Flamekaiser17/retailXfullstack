@@ -65,7 +65,7 @@
         <div class="col-lg-2 col-4">
           <div class="brand-wrap">
             <a href="{% url 'index' %}" class="brand-link" style="text-decoration: none;">
-              <h2 class="logo-text">FootFusion</h2>
+              <h2 class="logo-text">RetailX</h2>
             </a>
           </div>
         </div>
@@ -103,12 +103,12 @@
             <div class="widget-header icontext">
               {% if user.is_authenticated %}
               {% if user.profile.profile_image %}
-              <a href="{% url 'profile' username=user.username %}" class="icon icon-sm rounded-circle border">
+              <a href="{% url 'profile' %}" class="icon icon-sm rounded-circle border">
                 <img src="{{ user.profile.profile_image }}" alt="Profile Image" class="rounded-circle" width="42"
                   height="42" />
               </a>
               {% else %}
-              <a href="{% url 'profile' username=user.username %}" class="icon icon-sm rounded-circle border">
+              <a href="{% url 'profile' %}" class="icon icon-sm rounded-circle border">
                 <i class="fa fa-user"></i>
               </a>
               {% endif %}
@@ -144,10 +144,10 @@
 <style>
   /* Unified Color System for Navbar */
   :root {
-    --primary-color: #6366f1;
-    --primary-dark: #4f46e5;
-    --accent-color: #fbbf24;
-    --accent-dark: #f59e0b;
+    --primary-color: #1a1a1a;
+    --primary-dark: #2d2d2d;
+    --accent-color: #6b7280;
+    --accent-dark: #4a4a4a;
     --text-dark: #1e293b;
     --white: #ffffff;
   }

@@ -203,3 +203,56 @@ def move_to_cart(request, uid):
 
     messages.success(request, "Product moved to cart successfully!")
     return redirect('cart')
+
+
+# Stock Notification Signup
+def stock_notification_signup(request, product_uid):
+    """AJAX endpoint for stock notification signup"""
+    if request.method == 'POST':
+        from products.models import StockNotification
+        import json
+        
+        try:
+            data = json.loads(request.body)
+            email = data.get('email', '').strip()
+            
+            if not email:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Please provide a valid email address.'
+                }, status=400)
+            
+            product = get_object_or_404(Product, uid=product_uid)
+            
+            # Create or get notification
+            notification, created = StockNotification.objects.get_or_create(
+                email=email,
+                product=product
+            )
+            
+            if created:
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Great! We\'ll notify you at {email} when {product.product_name} is back in stock.'
+                })
+            else:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'You\'re already subscribed to notifications for this product.'
+                })
+                
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request format.'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'An error occurred: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request method.'
+    }, status=405)
