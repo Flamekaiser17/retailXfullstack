@@ -27,7 +27,7 @@ SECRET_KEY = config("SECRET_KEY")
 #DEBUG=True → dev mode
 #DEBUG=False → production mode
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG")
+DEBUG = config("DEBUG", default="True", cast=bool)
 
 # Allowed hosts - read from environment variable (comma-separated values)
 ALLOWED_HOSTS = config(
