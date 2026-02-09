@@ -7,7 +7,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 
 def index(request):
-    query = Product.objects.all()
+    query = Product.objects.all().order_by('-id')  # Add ordering to prevent pagination warning
     categories = Category.objects.all()
     selected_sort = request.GET.get('sort')
     selected_category = request.GET.get('category')
@@ -33,7 +33,8 @@ def index(request):
     except EmptyPage:
         products = paginator.page(paginator.num_pages)
     except Exception as e:
-        print(e)
+        print(f"Pagination error: {e}")
+        products = paginator.page(1)  # Set products to first page on error
 
     context = {
         'products': products,
