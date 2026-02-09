@@ -75,9 +75,9 @@ INSTALLED_APPS = [
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
-# Facebook API KEYS
-SOCIAL_AUTH_FACEBOOK_KEY = config('SOCIAL_AUTH_FACEBOOK_KEY')
-SOCIAL_AUTH_FACEBOOK_SECRET = config('SOCIAL_AUTH_FACEBOOK_SECRET')
+# Facebook API KEYS (optional - can be added later)
+SOCIAL_AUTH_FACEBOOK_KEY = config('SOCIAL_AUTH_FACEBOOK_KEY', default='')
+SOCIAL_AUTH_FACEBOOK_SECRET = config('SOCIAL_AUTH_FACEBOOK_SECRET', default='')
 
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
@@ -228,14 +228,14 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER if EMAIL_HOST_USER else 'noreply@retailx.com'
 EMAIL_USE_SSL = False
 
-# RazorPay API KEYS
-RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
-RAZORPAY_SECRET_KEY = config('RAZORPAY_SECRET_KEY')
+# RazorPay API KEYS (optional - can be added later)
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
+RAZORPAY_SECRET_KEY = config('RAZORPAY_SECRET_KEY', default='')
 
 # Auth Backends Configurations
 AUTHENTICATION_BACKENDS = (
