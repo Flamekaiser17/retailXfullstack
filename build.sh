@@ -11,4 +11,7 @@ python manage.py collectstatic --no-input
 # Run migrations
 python manage.py migrate
 
+# Create superuser automatically
+python create_superuser.py
+
 echo "Build completed successfully!"
