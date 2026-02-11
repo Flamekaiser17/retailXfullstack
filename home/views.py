@@ -23,18 +23,23 @@ def index(request):
         elif selected_sort == 'priceDesc':
             query = query.order_by('-price')
 
-    page = request.GET.get('page', 1)
-    paginator = Paginator(query, 20)
+    # Handle empty database gracefully
+    if query.exists():
+        page = request.GET.get('page', 1)
+        paginator = Paginator(query, 20)
 
-    try:
-        products = paginator.page(page)
-    except PageNotAnInteger:
-        products = paginator.page(1)
-    except EmptyPage:
-        products = paginator.page(paginator.num_pages)
-    except Exception as e:
-        print(f"Pagination error: {e}")
-        products = paginator.page(1)  # Set products to first page on error
+        try:
+            products = paginator.page(page)
+        except PageNotAnInteger:
+            products = paginator.page(1)
+        except EmptyPage:
+            products = paginator.page(paginator.num_pages)
+        except Exception as e:
+            print(f"Pagination error: {e}")
+            products = paginator.page(1)  # Set products to first page on error
+    else:
+        # No products in database - create empty paginator
+        products = None
 
     context = {
         'products': products,
