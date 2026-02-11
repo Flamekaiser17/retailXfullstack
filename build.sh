@@ -14,4 +14,7 @@ python manage.py migrate
 # Create superuser automatically
 python create_superuser.py
 
+# Populate database with sample products
+python manage.py populate_db
+
 echo "Build completed successfully!"
