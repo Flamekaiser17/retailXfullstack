@@ -28,7 +28,16 @@ def get_product(request, slug):
     if product.reviews.exists():
         rating_percentage = (product.get_rating() / 5) * 100
 
+    has_purchased = False
+    if request.user.is_authenticated:
+        from accounts.models import OrderItem
+        has_purchased = OrderItem.objects.filter(order__user=request.user, product=product).exists()
+
     if request.method == 'POST' and request.user.is_authenticated:
+        if not has_purchased:
+            messages.error(request, "Only verified buyers can review this product.")
+            return redirect('get_product', slug=slug)
+            
         if review:
             review_form = ReviewForm(request.POST, instance=review)
         else:
@@ -80,6 +89,7 @@ def get_product(request, slug):
         'lowest_price': lowest_price,
         'highest_price': highest_price,
         'active_flash_sale': active_flash_sale,
+        'has_purchased': has_purchased,
     }
 
     if request.GET.get('size'):

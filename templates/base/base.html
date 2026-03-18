@@ -45,6 +45,48 @@
   {% block footer %}
   {% include 'home/footer.html' %}
   {% endblock %}
+
+  <!-- WhatsApp Floating Chat -->
+  <a href="https://wa.me/919876543210?text=Hello%20RetailX%20Support!%20I%20need%20help%20with%20my%20order." target="_blank" class="whatsapp-float">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+  <style>
+    .whatsapp-float {
+      position: fixed;
+      width: 60px;
+      height: 60px;
+      bottom: 40px;
+      right: 40px;
+      background-color: #25d366;
+      color: #FFF;
+      border-radius: 50Px;
+      text-align: center;
+      font-size: 30px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.15);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .whatsapp-float:hover {
+      transform: scale(1.1) translateY(-5px);
+      color: white;
+    }
+    .whatsapp-float i {
+      margin-top: 2px;
+    }
+    @media (max-width: 768px) {
+      .whatsapp-float {
+        width: 50px;
+        height: 50px;
+        bottom: 20px;
+        right: 20px;
+        font-size: 25px;
+      }
+    }
+  </style>
 </body>
 
 </html>
