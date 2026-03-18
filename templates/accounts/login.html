@@ -1,85 +1,313 @@
-{% extends "base/base.html" %} {% load static %} {% load socialaccount %} 
-{% block title %}Login{% endblock %}
+{% extends "base/base.html" %} {% load static %} {% load socialaccount %}
+{% block title %}Sign In — RetailX{% endblock %}
 {% block start %}
 
-<!-- ============================ COMPONENT LOGIN   ================================= -->
-<section class="section-content padding-bottom">
-  <div class="container-xl d-flex justify-content-center align-items-center mt-5">
-    <div class="row justify-content-center w-100">
-      <div class="col-xl-4">
-        <div class="card mb-4">
-          <div class="card-header" style="text-align: center; font-size: 25px">
-            Sign In
-          </div>
-          <div class="card-body">
-            <form method="POST" action="{% url 'login' %}?next={{ request.GET.next }}">
-              {% csrf_token %} {% include "base/alert.html" %}
+<style>
+  .auth-page {
+    min-height: calc(100vh - 130px);
+    display: flex;
+    align-items: stretch;
+    background: #fafafa;
+  }
+  /* Left Panel */
+  .auth-left {
+    flex: 1;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 50px;
+    position: relative;
+    overflow: hidden;
+    display: none;
+  }
+  @media(min-width:992px){ .auth-left { display: flex; } }
+  .auth-left::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,63,108,0.2) 0%, transparent 70%);
+  }
+  .auth-left-logo {
+    font-size: 40px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #FF3F6C, #FF6B35);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 40px;
+  }
+  .auth-left h2 { font-size: 36px; font-weight: 800; color: white; margin-bottom: 16px; line-height: 1.2; }
+  .auth-left p { color: rgba(255,255,255,0.6); font-size: 16px; line-height: 1.7; margin-bottom: 40px; }
+  .auth-perks { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+  .auth-perk {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 16px 20px;
+  }
+  .auth-perk-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #FF3F6C, #FF6B35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .auth-perk-text strong { display: block; color: white; font-size: 14px; font-weight: 700; }
+  .auth-perk-text span { color: rgba(255,255,255,0.5); font-size: 12px; }
 
-              <div class="form-group">
-                <input
-                  class="form-control"
-                  required
-                  placeholder="Username"
-                  name="username"
-                  type="text"
-                  autocomplete="username"
-                />
-              </div>
-              <!-- form-group// -->
-              <div class="form-group">
-                <input
-                  class="form-control"
-                  required
-                  placeholder="Password"
-                  name="password"
-                  type="password"
-                />
-              </div>
-              <!-- form-group// -->
+  /* Right Panel */
+  .auth-right {
+    flex: 0 0 480px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 50px;
+    background: white;
+  }
+  @media(max-width:991px){ .auth-right { flex: 1; padding: 30px 20px; } }
+  .auth-form-wrap { width: 100%; max-width: 380px; }
+  .auth-title { font-size: 28px; font-weight: 800; color: #1a1a2e; margin-bottom: 6px; }
+  .auth-sub { color: #888; font-size: 14px; margin-bottom: 32px; }
 
-              <div class="form-group">
-                <a href="{% url 'password_reset' %}" class="float-right">
-                  Forgot password?
-                </a>
-                <label class="float-left custom-control custom-checkbox">
-                  <input type="checkbox" class="custom-control-input" checked/>
-                  <div class="custom-control-label">Remember</div>
-                </label>
-              </div>
+  /* Form Styles */
+  .form-field {
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .field-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+    font-size: 15px;
+    pointer-events: none;
+  }
+  .field-input {
+    width: 100%;
+    padding: 13px 14px 13px 40px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #1a1a2e;
+    background: #fafafa;
+    transition: all 0.2s;
+    outline: none;
+  }
+  .field-input:focus {
+    border-color: #FF3F6C;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(255,63,108,0.1);
+  }
+  .field-input::placeholder { color: #bbb; }
 
-              <!-- form-group// -->
-              <div class="form-group">
-                <button type="submit" class="btn btn-primary btn-block">
-                  Login
-                </button>
-              </div>
+  .pw-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+    cursor: pointer;
+    font-size: 15px;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .pw-toggle:hover { color: #FF3F6C; }
 
-              <p class="text-center mt-4">
-                Don't have account? <a href="{% url 'register' %}">Sign up</a>
-              </p>
+  .auth-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .remember-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #666;
+    cursor: pointer;
+  }
+  .remember-label input { accent-color: #FF3F6C; }
+  .forgot-link { font-size: 13px; color: #FF3F6C; font-weight: 600; text-decoration: none; }
+  .forgot-link:hover { color: #cc2f54; }
 
-              <div class="line"></div>
+  .btn-login {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #FF3F6C, #FF6B35);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 6px 20px rgba(255,63,108,0.3);
+  }
+  .btn-login:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,63,108,0.4); }
+  .btn-login:active { transform: translateY(0); }
 
-              <div class="media-options">
-                <a href="{% provider_login_url 'facebook' %}" class="field facebook">
-                  <i class="bx bxl-facebook facebook-icon"></i>
-                  <span>Login with Facebook</span>
-                </a>
-              </div>
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+    color: #ccc;
+    font-size: 13px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #eee;
+  }
 
-              <div class="media-options">
-                <a href="{% provider_login_url 'google' %}?next=/" class="field google">
-                  <img src="{% static 'images/google.png' %}" alt="" class="google-img"/>
-                  <span>Login with Google</span>
-                </a>
-              </div>
-            </form>
-          </div>
+  .social-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    background: white;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 10px;
+  }
+  .social-btn:hover { border-color: #FF3F6C; background: #fff0f3; color: #FF3F6C; }
+  .social-btn img { width: 20px; height: 20px; object-fit: contain; }
+  .social-btn .fab { font-size: 18px; color: #1877F2; }
+  .social-btn:hover .fab { color: #FF3F6C; }
+
+  .auth-footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 14px;
+    color: #888;
+  }
+  .auth-footer a { color: #FF3F6C; font-weight: 700; text-decoration: none; }
+  .auth-footer a:hover { color: #cc2f54; }
+</style>
+
+<div class="auth-page">
+  <!-- Left: Branding Panel -->
+  <div class="auth-left">
+    <div class="auth-left-logo">RetailX</div>
+    <h2>Welcome back to India's smartest store</h2>
+    <p>Sign in to access your orders, wishlist, exclusive deals and personalized recommendations.</p>
+    <div class="auth-perks">
+      <div class="auth-perk">
+        <div class="auth-perk-icon">🚀</div>
+        <div class="auth-perk-text">
+          <strong>Free Delivery</strong>
+          <span>On all orders above ₹499</span>
+        </div>
+      </div>
+      <div class="auth-perk">
+        <div class="auth-perk-icon">🔄</div>
+        <div class="auth-perk-text">
+          <strong>7-Day Easy Returns</strong>
+          <span>No questions asked</span>
+        </div>
+      </div>
+      <div class="auth-perk">
+        <div class="auth-perk-icon">🎁</div>
+        <div class="auth-perk-text">
+          <strong>Loyalty Rewards</strong>
+          <span>Earn points on every purchase</span>
         </div>
       </div>
     </div>
   </div>
-</section>
-<!-- ============================ COMPONENT LOGIN END ================================= -->
+
+  <!-- Right: Form Panel -->
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <div class="auth-title">Sign In 👋</div>
+      <div class="auth-sub">Enter your credentials to continue shopping</div>
+
+      {% include "base/alert.html" %}
+
+      <form method="POST" action="{% url 'login' %}?next={{ request.GET.next }}">
+        {% csrf_token %}
+
+        <div class="form-field">
+          <i class="fas fa-user field-icon"></i>
+          <input class="field-input" type="text" name="username" placeholder="Username" required autocomplete="username">
+        </div>
+
+        <div class="form-field">
+          <i class="fas fa-lock field-icon"></i>
+          <input class="field-input" type="password" name="password" placeholder="Password" required id="pw-input">
+          <button type="button" class="pw-toggle" onclick="togglePw()">
+            <i class="fas fa-eye" id="pw-icon"></i>
+          </button>
+        </div>
+
+        <div class="auth-options">
+          <label class="remember-label">
+            <input type="checkbox" checked> Remember me
+          </label>
+          <a href="{% url 'password_reset' %}" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn-login">
+          <i class="fas fa-sign-in-alt me-2"></i> Sign In
+        </button>
+      </form>
+
+      <div class="divider">or continue with</div>
+
+      <a href="{% provider_login_url 'google' %}?next=/" class="social-btn">
+        <img src="{% static 'images/google.png' %}" alt="Google" onerror="this.style.display='none';this.nextSibling.style.display='inline'">
+        <i class="fab fa-google" style="color:#EA4335;display:none;"></i>
+        Continue with Google
+      </a>
+
+      <a href="{% provider_login_url 'facebook' %}" class="social-btn">
+        <i class="fab fa-facebook-square" style="font-size:20px;color:#1877F2;"></i>
+        Continue with Facebook
+      </a>
+
+      <div class="auth-footer">
+        New to RetailX? <a href="{% url 'register' %}">Create an account →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePw() {
+  const inp = document.getElementById('pw-input');
+  const icon = document.getElementById('pw-icon');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    inp.type = 'password';
+    icon.className = 'fas fa-eye';
+  }
+}
+</script>
 
 {% endblock %}

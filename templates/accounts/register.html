@@ -1,103 +1,201 @@
 {% extends "base/base.html" %} {% load static %} {% load socialaccount %}
-{% block title %}Register{% endblock %}
+{% block title %}Create Account — RetailX{% endblock %}
 {% block start %}
 
-<!-- ============================ COMPONENT Sign-Up ================================= -->
-<section class="section-content padding-bottom">
-  <div class="container-xl d-flex justify-content-center align-items-center mt-5">
-    <div class="row justify-content-center w-100">
-      <div class="col-xl-4">
-        <div class="card mb-4">
-          <div class="card-header" style="text-align: center; font-size: 25px;">Sign Up</div>
-          <div class="card-body">
-            <form method="POST">
-              {% csrf_token %} {% include "base/alert.html" %}
+<style>
+  .auth-page {
+    min-height: calc(100vh - 130px);
+    display: flex;
+    align-items: stretch;
+    background: #fafafa;
+  }
+  .auth-left {
+    flex: 1;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 50px;
+    position: relative;
+    overflow: hidden;
+  }
+  @media(min-width:992px){ .auth-left { display: flex; } }
+  .auth-left::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,63,108,0.2) 0%, transparent 70%);
+  }
+  .auth-left-logo { font-size: 40px; font-weight: 900; background: linear-gradient(135deg, #FF3F6C, #FF6B35); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 40px; }
+  .auth-left h2 { font-size: 36px; font-weight: 800; color: white; margin-bottom: 16px; line-height: 1.2; }
+  .auth-left p { color: rgba(255,255,255,0.6); font-size: 16px; line-height: 1.7; margin-bottom: 40px; }
+  .steps { display: flex; flex-direction: column; gap: 20px; }
+  .step { display: flex; align-items: flex-start; gap: 14px; }
+  .step-num { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #FF3F6C, #FF6B35); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+  .step-text strong { display: block; color: white; font-size: 15px; font-weight: 700; }
+  .step-text span { color: rgba(255,255,255,0.5); font-size: 13px; }
 
-              <!-- form-group// -->
-              <div class="form-group">
-                <input
-                  class="form-control"
-                  required
-                  placeholder="Username"
-                  name="username"
-                  type="text"
-                  autocomplete="username"/>
-              </div>
+  .auth-right {
+    flex: 0 0 520px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 50px;
+    background: white;
+    overflow-y: auto;
+  }
+  @media(max-width:991px){ .auth-right { flex: 1; padding: 30px 20px; } }
+  .auth-form-wrap { width: 100%; max-width: 400px; }
+  .auth-title { font-size: 28px; font-weight: 800; color: #1a1a2e; margin-bottom: 6px; }
+  .auth-sub { color: #888; font-size: 14px; margin-bottom: 28px; }
 
-              <div class="form-group">
-                <input
-                  class="form-control"
-                  required
-                  placeholder="First Name"
-                  name="first_name"
-                  type="text"
-                  autocomplete="given-name"/>
-              </div>
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-field { position: relative; margin-bottom: 14px; }
+  .field-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 15px; pointer-events: none; }
+  .field-input {
+    width: 100%;
+    padding: 13px 14px 13px 40px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #1a1a2e;
+    background: #fafafa;
+    transition: all 0.2s;
+    outline: none;
+  }
+  .field-input:focus { border-color: #FF3F6C; background: white; box-shadow: 0 0 0 4px rgba(255,63,108,0.1); }
+  .field-input::placeholder { color: #bbb; }
 
-              <div class="form-group">
-                <input
-                  class="form-control"
-                  required
-                  placeholder="Last Name"
-                  name="last_name"
-                  type="text"
-                  autocomplete="family-name"/>
-              </div>
+  .pw-strength-bar { height: 4px; border-radius: 4px; background: #eee; margin-top: 6px; overflow: hidden; }
+  .pw-strength-fill { height: 100%; border-radius: 4px; transition: all 0.3s; width: 0; }
 
-              <div class="form-group">
-                <input
-                  class="form-control"
-                  required
-                  placeholder="Email"
-                  name="email"
-                  type="text"
-                  autocomplete="email"/>
-              </div>
-              
-              <div class="form-group">
-                <input
-                  class="form-control"
-                  required
-                  placeholder="Password"
-                  name="password"
-                  type="password"
-                />
-              </div>
-              
-              <div class="form-group">
-                <button type="submit" class="btn btn-primary btn-block">
-                  Register
-                </button>
+  .terms-check { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; font-size: 13px; color: #666; }
+  .terms-check input { accent-color: #FF3F6C; margin-top: 2px; flex-shrink: 0; }
+  .terms-check a { color: #FF3F6C; font-weight: 600; text-decoration: none; }
 
-              <!-- form-group end -->
-               
-                <p class="text-center mt-4">
-                  Already have account? <a href="{% url 'login' %}">Sign in</a>
-                </p>
+  .btn-register {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #FF3F6C, #FF6B35);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 6px 20px rgba(255,63,108,0.3);
+  }
+  .btn-register:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,63,108,0.4); }
 
-                <div class="line"></div>
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #ccc; font-size: 13px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #eee; }
+  .social-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 16px; border-radius: 12px; border: 2px solid #e9ecef; background: white; font-size: 14px; font-weight: 600; color: #333; text-decoration: none; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; }
+  .social-btn:hover { border-color: #FF3F6C; background: #fff0f3; color: #FF3F6C; }
+  .auth-footer { text-align: center; margin-top: 20px; font-size: 14px; color: #888; }
+  .auth-footer a { color: #FF3F6C; font-weight: 700; text-decoration: none; }
+</style>
 
-                <div class="media-options">
-                  <a href="{% provider_login_url 'facebook' %}" class="field facebook">
-                    <i class="bx bxl-facebook facebook-icon"></i>
-                    <span>Login with Facebook</span>
-                  </a>
-                </div>
-
-                <div class="media-options">
-                  <a href="{% provider_login_url 'google' %}?next=/" class="field google">
-                    <img src="{% static 'images/google.png' %}" alt="" class="google-img" />
-                    <span>Login with Google</span>
-                  </a>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+<div class="auth-page">
+  <!-- Left Branding -->
+  <div class="auth-left">
+    <div class="auth-left-logo">RetailX</div>
+    <h2>Join 50,000+ happy shoppers!</h2>
+    <p>Create your free account in 30 seconds and start shopping the smartest way.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Fill your details</strong><span>Name, email, and a password</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Verify your email</strong><span>Click the link we send you</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Start shopping!</strong><span>Get 20% off your first order</span></div>
       </div>
     </div>
   </div>
-</section>
-<!-- ============================ COMPONENT Sign-Up END ================================= -->
+
+  <!-- Right Form -->
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <div class="auth-title">Create Account ✨</div>
+      <div class="auth-sub">Sign up and get exclusive member benefits</div>
+
+      {% include "base/alert.html" %}
+
+      <form method="POST">
+        {% csrf_token %}
+
+        <div class="form-field">
+          <i class="fas fa-at field-icon"></i>
+          <input class="field-input" type="text" name="username" placeholder="Username" required autocomplete="username">
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-field" style="margin-bottom:0;">
+            <i class="fas fa-user field-icon"></i>
+            <input class="field-input" type="text" name="first_name" placeholder="First Name" required autocomplete="given-name">
+          </div>
+          <div class="form-field" style="margin-bottom:0;">
+            <i class="fas fa-user field-icon"></i>
+            <input class="field-input" type="text" name="last_name" placeholder="Last Name" required autocomplete="family-name">
+          </div>
+        </div>
+        <div style="margin-bottom:14px;"></div>
+
+        <div class="form-field">
+          <i class="fas fa-envelope field-icon"></i>
+          <input class="field-input" type="email" name="email" placeholder="Email Address" required autocomplete="email">
+        </div>
+
+        <div class="form-field">
+          <i class="fas fa-lock field-icon"></i>
+          <input class="field-input" type="password" name="password" placeholder="Create Password" required id="pw-reg" oninput="checkStrength(this.value)">
+          <div class="pw-strength-bar"><div class="pw-strength-fill" id="pw-bar"></div></div>
+        </div>
+
+        <div class="terms-check">
+          <input type="checkbox" required id="terms">
+          <label for="terms">I agree to the <a href="{% url 'terms-and-conditions' %}">Terms & Conditions</a> and <a href="{% url 'privacy-policy' %}">Privacy Policy</a></label>
+        </div>
+
+        <button type="submit" class="btn-register">
+          <i class="fas fa-user-plus me-2"></i> Create My Account
+        </button>
+      </form>
+
+      <div class="divider">or sign up with</div>
+      <a href="{% provider_login_url 'google' %}?next=/" class="social-btn">
+        <img src="{% static 'images/google.png' %}" alt="Google" width="20" onerror="this.style.display='none'">
+        <i class="fab fa-google" style="color:#EA4335;"></i>
+        Continue with Google
+      </a>
+
+      <div class="auth-footer">Already have an account? <a href="{% url 'login' %}">Sign in →</a></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function checkStrength(pw) {
+  const bar = document.getElementById('pw-bar');
+  let strength = 0;
+  if (pw.length >= 8) strength++;
+  if (/[A-Z]/.test(pw)) strength++;
+  if (/[0-9]/.test(pw)) strength++;
+  if (/[^A-Za-z0-9]/.test(pw)) strength++;
+  const colors = ['', '#ef4444', '#f59e0b', '#10b981', '#10b981'];
+  const widths = ['0%', '25%', '50%', '75%', '100%'];
+  bar.style.width = widths[strength];
+  bar.style.background = colors[strength];
+}
+</script>
 
 {% endblock %}
