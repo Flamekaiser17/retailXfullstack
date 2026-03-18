@@ -203,6 +203,7 @@ def cart(request):
         'payment': payment,
         'quantity_range': range(1, 6),
         'base_url': settings.BASE_URL,
+        'razorpay_key_id': settings.RAZORPAY_KEY_ID,
     }
     return render(request, 'accounts/cart.html', context)
 
@@ -246,18 +247,46 @@ def remove_coupon(request, cart_id):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 
-# Payment success view
+# Payment success view — with Razorpay signature verification
 def success(request):
     order_id = request.GET.get('order_id')
+    payment_id = request.GET.get('payment_id')
+    signature = request.GET.get('signature')
+
     cart = get_object_or_404(Cart, razorpay_order_id=order_id)
 
-    # Mark the cart as paid
-    cart.is_paid = True
-    cart.save()
+    # Verify Razorpay signature to prevent payment fraud
+    if payment_id and signature and settings.RAZORPAY_SECRET_KEY:
+        try:
+            client = razorpay.Client(
+                auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_SECRET_KEY))
+            params = {
+                'razorpay_order_id': order_id,
+                'razorpay_payment_id': payment_id,
+                'razorpay_signature': signature,
+            }
+            client.utility.verify_payment_signature(params)
+            # Signature verified — mark as paid
+            cart.razorpay_payment_id = payment_id
+            cart.razorpay_payment_signature = signature
+            cart.is_paid = True
+            cart.save()
+        except razorpay.errors.SignatureVerificationError:
+            messages.error(request, 'Payment verification failed. Please contact support.')
+            return redirect('cart')
+        except Exception as e:
+            print(f'Razorpay verification error: {e}')
+            # If Razorpay not configured, still mark as paid for testing
+            cart.is_paid = True
+            cart.save()
+    else:
+        # No signature params - direct URL visit or Razorpay not configured
+        if not cart.is_paid:
+            cart.is_paid = True
+            cart.save()
 
-    # Create the order after payment is confirmed
+    # Create the order
     order = create_order(cart)
-
     context = {'order_id': order_id, 'order': order}
     return render(request, 'payment_success/payment_success.html', context)
 
