@@ -94,3 +94,27 @@ admin.site.register(Coupon)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(ProductImage, ProductImageStandaloneAdmin)
 admin.site.register(ProductReview)
+
+
+@admin.register(PriceHistory)
+class PriceHistoryAdmin(admin.ModelAdmin):
+    list_display = ['product', 'price', 'note', 'recorded_at']
+    list_filter = ['recorded_at']
+    search_fields = ['product__product_name']
+    readonly_fields = ['recorded_at']
+
+
+@admin.register(FlashSale)
+class FlashSaleAdmin(admin.ModelAdmin):
+    list_display = ['title', 'discount_percentage', 'start_time', 'end_time', 'is_active', 'is_live']
+    list_filter = ['is_active']
+    filter_horizontal = ['products']
+
+    def is_live(self, obj):
+        return obj.is_live()
+    is_live.boolean = True
+    is_live.short_description = 'Live Now?'
+
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    list_display = ['user', 'product', 'added_on']

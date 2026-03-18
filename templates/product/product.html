@@ -898,6 +898,120 @@
       </div>
     </section>
 
+    <!-- ========== FLASH SALE BANNER (if active) ========== -->
+    {% if active_flash_sale %}
+    <div style="background:linear-gradient(135deg,{{ active_flash_sale.banner_color }},#FF6B35);border-radius:16px;padding:20px 28px;margin-bottom:30px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div style="color:white;">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;opacity:0.85;margin-bottom:4px;">⚡ Flash Sale</div>
+        <div style="font-size:22px;font-weight:800;">{{ active_flash_sale.title }}</div>
+        <div style="font-size:14px;opacity:0.8;margin-top:4px;">🏷️ {{ active_flash_sale.discount_percentage }}% OFF — Limited time offer!</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="color:white;font-size:12px;font-weight:600;margin-bottom:6px;">ENDS IN</div>
+        <div id="flashCountdown" style="font-size:28px;font-weight:900;color:white;font-family:monospace;background:rgba(0,0,0,0.2);padding:8px 16px;border-radius:10px;">--:--:--</div>
+      </div>
+    </div>
+    <script>
+      (function(){
+        var end = new Date("{{ active_flash_sale.end_time|date:'c' }}").getTime();
+        function tick(){
+          var now = Date.now();
+          var diff = Math.max(0, end - now);
+          var h = Math.floor(diff/3600000);
+          var m = Math.floor((diff%3600000)/60000);
+          var s = Math.floor((diff%60000)/1000);
+          document.getElementById('flashCountdown').textContent =
+            String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+        }
+        tick(); setInterval(tick, 1000);
+      })();
+    </script>
+    {% endif %}
+
+    <!-- ========== PRICE HISTORY CHART ========== -->
+    {% if price_history_values != '[]' %}
+    <div style="background:white;border-radius:20px;padding:28px;margin-bottom:36px;box-shadow:0 4px 20px rgba(0,0,0,0.07);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#FF3F6C;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;">📊 RetailX Exclusive</div>
+          <h4 style="font-size:20px;font-weight:800;color:#1a1a2e;margin:0;">Price History</h4>
+          <p style="color:#888;font-size:13px;margin:4px 0 0;">See how prices have changed — know if it's truly a deal</p>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          {% if lowest_price %}
+          <div style="text-align:center;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 16px;">
+            <div style="font-size:10px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:1px;">Lowest Ever</div>
+            <div style="font-size:18px;font-weight:800;color:#059669;">₹{{ lowest_price.price }}</div>
+          </div>
+          {% endif %}
+          {% if highest_price %}
+          <div style="text-align:center;background:#fff0f3;border:1px solid #fecdd3;border-radius:12px;padding:10px 16px;">
+            <div style="font-size:10px;font-weight:700;color:#FF3F6C;text-transform:uppercase;letter-spacing:1px;">Highest Ever</div>
+            <div style="font-size:18px;font-weight:800;color:#FF3F6C;">₹{{ highest_price.price }}</div>
+          </div>
+          {% endif %}
+          <div style="text-align:center;background:#f0f4ff;border:1px solid #c7d2fe;border-radius:12px;padding:10px 16px;">
+            <div style="font-size:10px;font-weight:700;color:#4f6ef7;text-transform:uppercase;letter-spacing:1px;">Current Price</div>
+            <div style="font-size:18px;font-weight:800;color:#4f6ef7;">₹{{ product.price }}</div>
+          </div>
+        </div>
+      </div>
+      <div style="position:relative;height:200px;">
+        <canvas id="priceChart"></canvas>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+    (function(){
+      var labels = {{ price_history_labels|safe }};
+      var values = {{ price_history_values|safe }};
+      if (!labels.length) return;
+      var ctx = document.getElementById('priceChart').getContext('2d');
+      var grad = ctx.createLinearGradient(0,0,0,200);
+      grad.addColorStop(0,'rgba(255,63,108,0.25)');
+      grad.addColorStop(1,'rgba(255,63,108,0)');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets:[{
+            label:'Price (₹)',
+            data: values,
+            borderColor:'#FF3F6C',
+            borderWidth: 2.5,
+            pointBackgroundColor:'#FF3F6C',
+            pointBorderColor:'white',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            backgroundColor: grad,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{display:false},
+            tooltip:{
+              callbacks:{
+                label: function(ctx){ return '₹' + ctx.parsed.y; }
+              }
+            }
+          },
+          scales:{
+            y:{
+              grid:{color:'rgba(0,0,0,0.05)'},
+              ticks:{callback:function(v){return '₹'+v;}}
+            },
+            x:{grid:{display:false}}
+          }
+        }
+      });
+    })();
+    </script>
+    {% endif %}
+
     <!-- ========== RELATED PRODUCTS ========== -->
     <h3 class="title mt-5 mb-3">Related Products</h3>
     {% if related_products %}

@@ -139,3 +139,37 @@ class StockNotification(BaseModel):
 
     def __str__(self) -> str:
         return f'{self.email} - {self.product.product_name}'
+
+
+class PriceHistory(BaseModel):
+    """Tracks price changes over time — unique feature vs Amazon/Flipkart"""
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name='price_history')
+    price = models.IntegerField()
+    recorded_at = models.DateTimeField(auto_now_add=True)
+    note = models.CharField(max_length=100, blank=True, default='')  # e.g. "Sale price", "Regular price"
+
+    class Meta:
+        ordering = ['recorded_at']
+
+    def __str__(self) -> str:
+        return f'{self.product.product_name} — ₹{self.price} on {self.recorded_at.strftime("%d %b %Y")}'
+
+
+class FlashSale(BaseModel):
+    """Flash sale model — creates urgency like Myntra's End of Reason Sale"""
+    title = models.CharField(max_length=200)
+    discount_percentage = models.IntegerField(default=20)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    products = models.ManyToManyField(Product, blank=True, related_name='flash_sales')
+    is_active = models.BooleanField(default=True)
+    banner_color = models.CharField(max_length=20, default='#FF3F6C')
+
+    def __str__(self) -> str:
+        return self.title
+
+    def is_live(self):
+        from django.utils import timezone
+        now = timezone.now()
+        return self.is_active and self.start_time <= now <= self.end_time

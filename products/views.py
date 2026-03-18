@@ -1,3 +1,4 @@
+import json
 import random
 from .forms import ReviewForm
 from django.urls import reverse
@@ -6,7 +7,7 @@ from accounts.models import Cart, CartItem
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from products.models import Product, SizeVariant, ProductReview, Wishlist
+from products.models import Product, SizeVariant, ProductReview, Wishlist, PriceHistory
 
 # Create your views here.
 
@@ -22,7 +23,6 @@ def get_product(request, slug):
             review = ProductReview.objects.filter(product=product, user=request.user).first()
         except Exception as e:
             print("No reviews found for this product", str(e))
-            messages.warning(request, "No reviews found for this product")
 
     rating_percentage = 0
     if product.reviews.exists():
@@ -30,10 +30,8 @@ def get_product(request, slug):
 
     if request.method == 'POST' and request.user.is_authenticated:
         if review:
-            # If review exists, update it
             review_form = ReviewForm(request.POST, instance=review)
         else:
-            # Otherwise, create a new review
             review_form = ReviewForm(request.POST)
 
         if review_form.is_valid():
@@ -54,6 +52,22 @@ def get_product(request, slug):
     if request.user.is_authenticated:
         in_wishlist = Wishlist.objects.filter(user=request.user, product=product).exists()
 
+    # Price History — unique RetailX feature
+    price_history_qs = PriceHistory.objects.filter(product=product).order_by('recorded_at')
+    price_history_labels = json.dumps([
+        ph.recorded_at.strftime('%d %b %Y') for ph in price_history_qs
+    ])
+    price_history_values = json.dumps([ph.price for ph in price_history_qs])
+    lowest_price = price_history_qs.order_by('price').first()
+    highest_price = price_history_qs.order_by('-price').first()
+
+    # Active flash sale for this product
+    from django.utils import timezone
+    now = timezone.now()
+    active_flash_sale = product.flash_sales.filter(
+        is_active=True, start_time__lte=now, end_time__gte=now
+    ).first()
+
     context = {
         'product': product,
         'sorted_size_variants': sorted_size_variants,
@@ -61,6 +75,11 @@ def get_product(request, slug):
         'review_form': review_form,
         'rating_percentage': rating_percentage,
         'in_wishlist': in_wishlist,
+        'price_history_labels': price_history_labels,
+        'price_history_values': price_history_values,
+        'lowest_price': lowest_price,
+        'highest_price': highest_price,
+        'active_flash_sale': active_flash_sale,
     }
 
     if request.GET.get('size'):
