@@ -1,43 +1,254 @@
-{% extends "base/base.html"%}
-{% block title %}Search Product{% endblock %}
+{% extends "base/base.html" %}
+{% block title %}
+  {% if query %}Search: "{{ query }}" — RetailX{% else %}Search Products — RetailX{% endif %}
+{% endblock %}
 {% block start %}
 
 <style>
-  h3 {
-    margin-bottom: 20px;
+  :root {
+    --primary: #FF3F6C;
+    --text-main: #1a1a2e;
+    --text-muted: #6c757d;
+    --gray-100: #f8f9fa;
+    --card-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    --card-hover-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  .search-hero {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    padding: 40px 0;
+    color: white;
+  }
+  .search-hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+  .search-hero p { color: rgba(255,255,255,0.6); font-size: 15px; }
+  .search-hero .query-text { color: #FF3F6C; }
+  .result-count-badge {
+    display: inline-block;
+    background: rgba(255,63,108,0.15);
+    color: #FF6B35;
+    border: 1px solid rgba(255,63,108,0.3);
+    padding: 4px 14px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+
+  .search-results-section { padding: 40px 0 60px; }
+
+  /* Product Cards */
+  .product-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: var(--transition);
+    box-shadow: var(--card-shadow);
+    position: relative;
+    height: 100%;
+  }
+  .product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--card-hover-shadow);
+  }
+  .product-img-wrapper {
+    position: relative;
+    overflow: hidden;
+    background: var(--gray-100);
+    aspect-ratio: 1/1;
+  }
+  .product-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+  .product-card:hover .product-img-wrapper img { transform: scale(1.08); }
+  .quick-view-btn {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    opacity: 0;
+    background: rgba(0,0,0,0.85);
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition);
+    z-index: 2;
+    text-decoration: none;
+  }
+  .product-card:hover .quick-view-btn {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .product-info { padding: 16px; }
+  .product-cat-tag {
+    font-size: 11px;
+    color: var(--primary);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .product-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.4;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-decoration: none;
+  }
+  .product-name:hover { color: var(--primary); }
+  .product-stars { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; color: #f5a623; font-size: 12px; }
+  .product-price { font-size: 20px; font-weight: 800; color: var(--text-main); }
+
+  /* Empty State */
+  .empty-search {
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+  }
+  .empty-icon { font-size: 72px; margin-bottom: 20px; }
+  .empty-search h3 { font-size: 24px; font-weight: 800; color: var(--text-main); margin-bottom: 10px; }
+  .empty-search p { color: var(--text-muted); font-size: 16px; margin-bottom: 24px; }
+  .explore-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #FF3F6C, #FF6B35);
+    color: white;
+    padding: 14px 32px;
+    border-radius: 50px;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: var(--transition);
+    box-shadow: 0 6px 20px rgba(255,63,108,0.3);
+  }
+  .explore-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,63,108,0.4); color: white; }
+
+  /* Suggestions */
+  .suggestion-tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
+  .suggestion-tag {
+    background: var(--gray-100);
+    border: 1px solid #e9ecef;
+    color: var(--text-main);
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: var(--transition);
+  }
+  .suggestion-tag:hover { background: #fff0f3; border-color: var(--primary); color: var(--primary); }
+
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .product-card { animation: fadeInUp 0.4s ease both; }
+  .product-card:nth-child(1) { animation-delay: 0.05s; }
+  .product-card:nth-child(2) { animation-delay: 0.10s; }
+  .product-card:nth-child(3) { animation-delay: 0.15s; }
+  .product-card:nth-child(4) { animation-delay: 0.20s; }
 </style>
 
-<section class="section-content padding-y">
+<!-- Hero Search Header -->
+<div class="search-hero">
   <div class="container">
     {% if query %}
-    <h3>Showing results for '{{ query }}':</h3>
+      <h1>Results for <span class="query-text">"{{ query }}"</span></h1>
+      {% if products %}
+        <div class="result-count-badge">✅ {{ products|length }} products found</div>
+      {% else %}
+        <div class="result-count-badge" style="color:#f59e0b;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.1);">😕 No results found</div>
+      {% endif %}
     {% else %}
-    <h3>No search query entered.</h3>
+      <h1>Search Products</h1>
+      <p>Start typing in the search bar above to find products</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Results -->
+<section class="search-results-section">
+  <div class="container">
+    {% include 'base/alert.html' %}
+
+    {% if products %}
+    <div class="row g-3">
+      {% for product in products %}
+      <div class="col-6 col-md-4 col-lg-3">
+        <div class="product-card h-100">
+          <a href="{% url 'get_product' product.slug %}" class="quick-view-btn"><i class="fas fa-eye me-1"></i> View Product</a>
+          <div class="product-img-wrapper">
+            <a href="{% url 'get_product' product.slug %}">
+              {% if product.product_images.first %}
+                <img src="{{ product.product_images.first.image_url }}" alt="{{ product.product_name }}" loading="lazy">
+              {% else %}
+                <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=70" alt="{{ product.product_name }}" loading="lazy">
+              {% endif %}
+            </a>
+          </div>
+          <div class="product-info">
+            <div class="product-cat-tag">{{ product.category.category_name }}</div>
+            <a href="{% url 'get_product' product.slug %}" class="product-name d-block">{{ product.product_name }}</a>
+            <div class="product-stars">
+              <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+              <i class="fas fa-star"></i><i class="far fa-star"></i>
+              <span style="color:#999;font-size:11px;margin-left:4px;">({{ product.reviews.count }})</span>
+            </div>
+            <div class="product-price">₹{{ product.price }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% elif query %}
+    <!-- No Results -->
+    <div class="empty-search">
+      <div class="empty-icon">🔍</div>
+      <h3>No results for "{{ query }}"</h3>
+      <p>Try different keywords, check spelling, or browse our categories</p>
+      <a href="{% url 'index' %}" class="explore-btn"><i class="fas fa-shopping-bag"></i> Browse All Products</a>
+      <div class="suggestion-tags mt-4">
+        <span style="font-size:13px;color:#999;width:100%;text-align:center;margin-bottom:8px;">Try searching:</span>
+        <a href="{% url 'product_search' %}?q=shirt" class="suggestion-tag">👕 Shirt</a>
+        <a href="{% url 'product_search' %}?q=shoes" class="suggestion-tag">👟 Shoes</a>
+        <a href="{% url 'product_search' %}?q=phone" class="suggestion-tag">📱 Phone</a>
+        <a href="{% url 'product_search' %}?q=watch" class="suggestion-tag">⌚ Watch</a>
+        <a href="{% url 'product_search' %}?q=book" class="suggestion-tag">📚 Book</a>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- No Query -->
+    <div class="empty-search">
+      <div class="empty-icon">✨</div>
+      <h3>What are you looking for?</h3>
+      <p>Search from 200+ products across all categories</p>
+      <div class="suggestion-tags">
+        <a href="{% url 'product_search' %}?q=fashion" class="suggestion-tag">👗 Fashion</a>
+        <a href="{% url 'product_search' %}?q=electronics" class="suggestion-tag">📱 Electronics</a>
+        <a href="{% url 'product_search' %}?q=shoes" class="suggestion-tag">👟 Shoes</a>
+        <a href="{% url 'product_search' %}?q=watch" class="suggestion-tag">⌚ Watch</a>
+        <a href="{% url 'product_search' %}?q=book" class="suggestion-tag">📚 Books</a>
+        <a href="{% url 'product_search' %}?q=sports" class="suggestion-tag">⚽ Sports</a>
+      </div>
+    </div>
     {% endif %}
 
-    <div class="row">
-      {% if products %} {% for product in products %}
-      <div class="col-md-3">
-        <figure class="card card-product-grid">
-          <div class="img-wrap">
-            <img src="{{product.product_images.first.image_url}}" />
-          </div>
-          <figcaption class="info-wrap border-top">
-            <a href="{% url 'get_product' product.slug %}" class="title">
-              <b>{{ product.product_name }}</b></a>
-            <div class="price mt-2">₹{{ product.price }}.00</div>
-          </figcaption>
-        </figure>
-      </div>
-
-      {% endfor %} {% elif query %}
-      <div class="col-md-12">
-        <p>No products found.</p>
-      </div>
-      {% endif %}
-
-    </div>
   </div>
 </section>
+
 {% endblock %}
