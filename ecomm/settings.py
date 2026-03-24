@@ -22,7 +22,7 @@ TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config("SECRET_KEY")
+SECRET_KEY = config("SECRET_KEY", default='django-insecure-default-key-for-build-only')
 
 #DEBUG=True → dev mode
 #DEBUG=False → production mode
@@ -44,7 +44,7 @@ BASE_URL = config("BASE_URL", default="http://127.0.0.1:8000")
 
 # Application definition
 
-SITE_ID = 3
+SITE_ID = config('SITE_ID', default=1, cast=int)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -243,6 +243,28 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER if EMAIL_HOST_USER else 'noreply@retailx.com'
 EMAIL_USE_SSL = False
+
+# Production logging to console
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}
 
 # RazorPay API KEYS
 RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
