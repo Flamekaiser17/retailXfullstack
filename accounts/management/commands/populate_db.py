@@ -107,15 +107,18 @@ class Command(BaseCommand):
 
         for product_data in products_data:
             category = categories[product_data['category']]
-            Product.objects.create(
+            product = Product.objects.create(
                 product_name=product_data['name'],
                 slug=slugify(product_data['name']),
                 price=product_data['price'],
                 category=category,
-                product_description=product_data['description'],
-                product_image=product_data['image'],
-                product_available=True,
+                product_desription=product_data['description'], # Fixed typo mismatch
                 newest_product=True,
+            )
+            # Correctly handle images via ProductImage model
+            ProductImage.objects.create(
+                product=product,
+                image_url=product_data['image']
             )
             self.stdout.write(self.style.SUCCESS(f'Created product: {product_data["name"]}'))
 

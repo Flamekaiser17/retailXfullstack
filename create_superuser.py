@@ -16,11 +16,14 @@ User = get_user_model()
 # Check if any superuser exists
 if not User.objects.filter(is_superuser=True).exists():
     # Create superuser
-    User.objects.create_superuser(
+    user = User.objects.create_superuser(
         username='admin',
         email='admin@retailx.com',
         password='admin123'  # Change this after first login!
     )
+    # Ensure profile is verified for immediate login
+    user.profile.is_email_verified = True
+    user.profile.save()
     print("✅ Superuser created: username='admin', password='admin123'")
     print("⚠️  IMPORTANT: Change password after first login!")
 else:
