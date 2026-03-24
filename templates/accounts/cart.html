@@ -187,12 +187,12 @@
           <div class="summary-title">Order Summary</div>
 
           <div class="summary-row">
-            <span>Subtotal ({{ cart.cart_items.count }} items)</span>
-            <span>₹{{ cart.get_cart_total }}</span>
+            <span>Subtotal (<span id="cart-item-count">{{ cart.cart_items.count }}</span> items)</span>
+            <span id="cart-subtotal">₹{{ cart.get_cart_total }}</span>
           </div>
           <div class="summary-row">
             <span>Delivery charges</span>
-            <span style="color:#10b981;font-weight:600;">{% if cart.get_cart_total >= 499 %}FREE{% else %}₹49{% endif %}</span>
+            <span id="cart-delivery" style="color:#10b981;font-weight:600;">{% if cart.get_cart_total >= 499 %}FREE{% else %}₹49{% endif %}</span>
           </div>
           {% if cart.coupon %}
           <div class="summary-row savings">
@@ -202,32 +202,34 @@
           {% endif %}
           <div class="summary-row total">
             <span>Total</span>
-            <span>₹{{ cart.get_cart_total_price_after_coupon }}</span>
+            <span id="cart-total">₹{{ cart.get_cart_total_price_after_coupon }}</span>
           </div>
 
-          {% if cart.get_cart_total >= 499 %}
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:12px;color:#059669;font-weight:600;margin-top:10px;">
-            🎉 You've unlocked FREE delivery!
+          <div id="free-delivery-msg">
+            {% if cart.get_cart_total >= 499 %}
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:12px;color:#059669;font-weight:600;margin-top:10px;">
+              🎉 You've unlocked FREE delivery!
+            </div>
+            {% else %}
+            <div style="background:#fff9e6;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:12px;color:#92400e;font-weight:600;margin-top:10px;">
+              Add ₹<span id="delivery-shortfall">{{ 499|add:"-"|add:cart.get_cart_total }}</span> more for FREE delivery
+            </div>
+            {% endif %}
           </div>
-          {% else %}
-          <div style="background:#fff9e6;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:12px;color:#92400e;font-weight:600;margin-top:10px;">
-            Add ₹{{ 499|add:"-"|add:cart.get_cart_total }} more for FREE delivery
-          </div>
-          {% endif %}
 
           <!-- Coupon -->
-          <div class="coupon-wrap">
+          <div class="coupon-wrap" id="coupon-container">
             {% if not cart.coupon %}
-            <form method="POST" class="coupon-form">
-              {% csrf_token %}
-              <input type="text" class="coupon-input" name="coupon" placeholder="🎟 Enter coupon code">
-              <button type="submit" class="coupon-apply">Apply</button>
+            <form id="coupon-form" class="coupon-form" onsubmit="applyCoupon(event)">
+              <input type="text" class="coupon-input" id="coupon-input" name="coupon" placeholder="🎟 Enter coupon code" required>
+              <button type="submit" class="coupon-apply" id="coupon-btn">Apply</button>
             </form>
+            <div id="coupon-error" style="color:red;font-size:12px;margin-top:5px;display:none;"></div>
             {% else %}
-            <div>
+            <div id="applied-coupon-box">
               <span class="coupon-tag">
-                ✅ {{ cart.coupon.coupon_code }} applied
-                <a href="{% url 'remove_coupon' cart.uid %}">✕</a>
+                ✅ <span id="coupon-code-text">{{ cart.coupon.coupon_code }}</span> applied
+                <a href="javascript:void(0)" onclick="removeCoupon('{{ cart.uid }}')">✕</a>
               </span>
             </div>
             {% endif %}
@@ -285,16 +287,44 @@
 <script>
   var options = {
     key: "{{ razorpay_key_id }}",
-    amount: "{{ cart.get_cart_total_price_after_coupon|floatformat:0 }}",
+    amount: "{{ payment.amount }}",
     currency: "INR",
     name: "RetailX",
     description: "Secure Purchase via RetailX",
     image: "https://i.imgur.com/n5tjHFD.png",
     order_id: "{{ payment.id }}",
     handler: function(response) {
-      // Redirect with payment verification params
-      var url = "{{ base_url }}/accounts/success/?order_id={{ payment.id }}&payment_id=" + response.razorpay_payment_id + "&signature=" + response.razorpay_signature;
-      window.location.href = url;
+      // FIX: Create a hidden form and submit to payment_callback
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = "{% url 'payment_callback' %}";
+      
+      var csrf = document.createElement('input');
+      csrf.type = 'hidden';
+      csrf.name = 'csrfmiddlewaretoken';
+      csrf.value = '{{ csrf_token }}';
+      form.appendChild(csrf);
+      
+      var orderId = document.createElement('input');
+      orderId.type = 'hidden';
+      orderId.name = 'razorpay_order_id';
+      orderId.value = response.razorpay_order_id;
+      form.appendChild(orderId);
+      
+      var payId = document.createElement('input');
+      payId.type = 'hidden';
+      payId.name = 'razorpay_payment_id';
+      payId.value = response.razorpay_payment_id;
+      form.appendChild(payId);
+      
+      var sig = document.createElement('input');
+      sig.type = 'hidden';
+      sig.name = 'razorpay_signature';
+      sig.value = response.razorpay_signature;
+      form.appendChild(sig);
+      
+      document.body.appendChild(form);
+      form.submit();
     },
     prefill: {
       name: "{{ request.user.get_full_name|default:request.user.username }}",
@@ -305,13 +335,14 @@
     modal: {
       ondismiss: function() {
         document.getElementById('rzp-button1').disabled = false;
-        document.getElementById('rzp-button1').innerHTML = '<i class="fas fa-lock"></i> Pay ₹{{ cart.get_cart_total_price_after_coupon }} Securely';
+        document.getElementById('rzp-button1').innerHTML = '<i class="fas fa-lock"></i> Pay ₹' + document.getElementById('cart-total').innerText.replace('₹', '') + ' Securely';
       }
     }
   };
   var rzp1 = new Razorpay(options);
   rzp1.on('payment.failed', function(response) {
     alert('Payment failed: ' + response.error.description);
+    document.getElementById('rzp-button1').disabled = false;
   });
   document.getElementById('rzp-button1').onclick = function(e) {
     e.preventDefault();
@@ -329,11 +360,94 @@ function changeQty(uid, delta) {
   if (newVal < 1) return;
   if (newVal > 10) return;
   inp.value = newVal;
+  
+  // Show spinner on total
+  document.getElementById('cart-total').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
   fetch("{% url 'update_cart_item' %}", {
     method: "POST",
     headers: {"Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}"},
     body: JSON.stringify({cart_item_id: uid, quantity: newVal})
-  }).then(r => r.json()).then(d => { if (d.success) location.reload(); });
+  }).then(r => r.json()).then(d => { 
+    if (d.success) {
+      updateSummaryDOM(d);
+    } else {
+      alert("Error: " + d.error);
+    }
+  });
+}
+
+function updateSummaryDOM(d) {
+    document.getElementById('cart-subtotal').innerText = '₹' + d.cart_total;
+    document.getElementById('cart-total').innerText = '₹' + d.final_total;
+    
+    var deliverySpan = document.getElementById('cart-delivery');
+    var freeMsgDiv = document.getElementById('free-delivery-msg');
+    
+    if (d.delivery === 0) {
+        deliverySpan.innerText = 'FREE';
+        freeMsgDiv.innerHTML = '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:12px;color:#059669;font-weight:600;margin-top:10px;">🎉 You\'ve unlocked FREE delivery!</div>';
+    } else {
+        deliverySpan.innerText = '₹' + d.delivery;
+        var shortfall = 499 - d.cart_total;
+        freeMsgDiv.innerHTML = '<div style="background:#fff9e6;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:12px;color:#92400e;font-weight:600;margin-top:10px;">Add ₹<span id="delivery-shortfall">' + shortfall + '</span> more for FREE delivery</div>';
+    }
+
+    var btn = document.getElementById('rzp-button1');
+    if(btn) {
+       btn.innerHTML = '<i class="fas fa-lock"></i> Pay ₹' + d.final_total + ' Securely';
+       if(d.razorpay_order_id && typeof options !== 'undefined') {
+           options.order_id = d.razorpay_order_id;
+           options.amount = d.final_total * 100;
+           rzp1 = new Razorpay(options); 
+       }
+    }
+}
+
+function applyCoupon(e) {
+  e.preventDefault();
+  var code = document.getElementById('coupon-input').value;
+  var btn = document.getElementById('coupon-btn');
+  var err = document.getElementById('coupon-error');
+  btn.innerHTML = '...';
+  btn.disabled = true;
+  err.style.display = 'none';
+
+  fetch("{% url 'apply_coupon_ajax' %}", {
+    method: "POST", headers: {"Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}"},
+    body: JSON.stringify({coupon: code})
+  }).then(r => r.json()).then(d => {
+    btn.innerHTML = 'Apply';
+    btn.disabled = false;
+    if(d.success) {
+      document.getElementById('coupon-container').innerHTML = 
+        '<span class="coupon-tag">' +
+        '  ✅ <span id="coupon-code-text">' + d.coupon_code + '</span> applied' +
+        '  <a href="javascript:void(0)" onclick="removeCoupon(\'{{ cart.uid }}\')">✕</a>' +
+        '</span>';
+      updateSummaryDOM(d);
+    } else {
+      err.innerText = d.error;
+      err.style.display = 'block';
+    }
+  });
+}
+
+function removeCoupon(cart_uid) {
+  fetch("{% url 'remove_coupon_ajax' %}", {
+    method: "POST", headers: {"Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}"},
+    body: JSON.stringify({cart_id: cart_uid})
+  }).then(r => r.json()).then(d => {
+    if(d.success) {
+      document.getElementById('coupon-container').innerHTML = 
+        '<form id="coupon-form" class="coupon-form" onsubmit="applyCoupon(event)">' +
+        '  <input type="text" class="coupon-input" id="coupon-input" name="coupon" placeholder="🎟 Enter coupon code" required>' +
+        '  <button type="submit" class="coupon-apply" id="coupon-btn">Apply</button>' +
+        '</form>' +
+        '<div id="coupon-error" style="color:red;font-size:12px;margin-top:5px;display:none;"></div>';
+      updateSummaryDOM(d);
+    }
+  });
 }
 </script>
 

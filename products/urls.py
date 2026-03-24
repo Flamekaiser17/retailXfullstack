@@ -11,6 +11,8 @@ urlpatterns = [
     path('like-review/<review_uid>/', like_review, name='like_review'),
     path('dislike-review/<review_uid>/',dislike_review, name='dislike_review'),
     path('notify/<product_uid>/', stock_notification_signup, name='stock_notification'),
+    path('check-inventory/', check_inventory_ajax, name='check_inventory'),
+    path('set-price-alert/', create_price_alert_ajax, name='set_price_alert'),
     path('<slug>/', get_product, name='get_product'),
     path('<slug>/<review_uid>/delete/', delete_review, name='delete_review'),
 ]

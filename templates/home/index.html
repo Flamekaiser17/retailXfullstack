@@ -885,7 +885,7 @@
       <div class="col-6 col-md-4 col-lg-3">
         <div class="product-card h-100">
           <div class="product-badge-sale">NEW</div>
-          <a href="{% url 'get_product' product.slug %}" class="quick-view-btn"><i class="fas fa-eye me-1"></i> Quick View</a>
+          <button class="quick-view-btn" onclick="openQuickView('{% url 'get_product' product.slug %}')"><i class="fas fa-eye me-1"></i> Quick View</button>
           <button class="wishlist-btn" title="Wishlist"><i class="fas fa-heart"></i></button>
           <div class="product-img-wrapper">
             <a href="{% url 'get_product' product.slug %}">
@@ -1119,6 +1119,19 @@
       icon.style.color = '';
     }
   }
+
+  // Quick View Logic
+  function openQuickView(url) {
+    var iframe = document.getElementById('quickViewFrame');
+    // add query param to strip out base template stuff if we want, or just load page directly
+    iframe.src = url;
+    var myModal = new bootstrap.Modal(document.getElementById('quickViewModal'));
+    myModal.show();
+  }
+
+  document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('quickViewFrame').src = '';
+  });
 </script>
 
 {% endblock %}

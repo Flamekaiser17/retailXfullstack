@@ -1,0 +1,160 @@
+C:\Users\ADMIN\AppData\Roaming\Python\Python313\site-packages\soupsieve\css_parser.py:876: FutureWarning: The pseudo class ':contains' is deprecated, ':-soup-contains' should be used moving forward.
+  warnings.warn(  # noqa: B028
+=====================================
+PAGE: /
+=====================================
+Status    : PASS 200
+CSS Files : PASS 7/7 loaded
+JS Files  : PASS 3/3 loaded
+Images    : PASS 39/39 loaded
+CSRF      : FAIL Missing in form
+Elements  : PASS WhatsApp widget found
+             FAIL Hero missing
+-------------------------------------
+=====================================
+PAGE: /accounts/login/
+=====================================
+Status    : FAIL 500
+-------------------------------------
+=====================================
+PAGE: /accounts/register/
+=====================================
+Status    : FAIL 500
+-------------------------------------
+=====================================
+PAGE: /accounts/cart/
+=====================================
+Status    : PASS 200
+CSS Files : PASS 7/7 loaded
+JS Files  : PASS 3/3 loaded
+Images    : PASS 39/39 loaded
+CSRF      : FAIL Missing in form
+Elements  : PASS WhatsApp widget found
+             PASS AJAX update found
+-------------------------------------
+=====================================
+PAGE: /product/wishlist/
+=====================================
+Status    : FAIL 500
+-------------------------------------
+
+=====================================
+   COMPLETE ISSUE REPORT
+=====================================
+CRITICAL (500 errors/Broken Links/CSRF) : 21
+BROKEN ASSETS (404)                     : 0
+MISSING ELEMENTS                        : 1
+=====================================
+Broken Link: /product/wishlist/ on / returned 500
+Broken Link: /accounts/login/ on / returned 500
+Broken Link: /accounts/order-history/ on / returned 500
+Broken Link: /product/wishlist/ on / returned 500
+Broken Link: /accounts/login/ on / returned 500
+Broken Link: /accounts/register/ on / returned 500
+Broken Link: /accounts/shipping-address/ on / returned 500
+Broken Link: /product/product-reviews/ on / returned 500
+Security: Missing CSRF token on /
+Missing Element: Hero section on homepage
+Critical: /accounts/login/ returned 500
+Critical: /accounts/register/ returned 500
+Broken Link: /product/wishlist/ on /accounts/cart/ returned 500
+Broken Link: /accounts/login/ on /accounts/cart/ returned 500
+Broken Link: /accounts/order-history/ on /accounts/cart/ returned 500
+Broken Link: /product/wishlist/ on /accounts/cart/ returned 500
+Broken Link: /accounts/login/ on /accounts/cart/ returned 500
+Broken Link: /accounts/register/ on /accounts/cart/ returned 500
+Broken Link: /accounts/shipping-address/ on /accounts/cart/ returned 500
+Broken Link: /product/product-reviews/ on /accounts/cart/ returned 500
+Security: Missing CSRF token on /accounts/cart/
+Critical: /product/wishlist/ returned 500
+=====================================
+=====================================
+PAGE: /
+=====================================
+Status    : PASS 200
+CSS Files : PASS 7/7 loaded
+JS Files  : PASS 3/3 loaded
+Images    : PASS 39/39 loaded
+CSRF      : FAIL Missing in form
+Elements  : PASS WhatsApp widget found
+             FAIL Hero missing
+-------------------------------------
+=====================================
+PAGE: /accounts/login/
+=====================================
+Status    : FAIL 500
+-------------------------------------
+=====================================
+PAGE: /accounts/register/
+=====================================
+Status    : FAIL 500
+-------------------------------------
+=====================================
+PAGE: /accounts/cart/
+=====================================
+Status    : PASS 200
+CSS Files : PASS 7/7 loaded
+JS Files  : PASS 3/3 loaded
+Images    : PASS 39/39 loaded
+CSRF      : FAIL Missing in form
+Elements  : PASS WhatsApp widget found
+             PASS AJAX update found
+-------------------------------------
+=====================================
+PAGE: /product/wishlist/
+=====================================
+Status    : FAIL 500
+-------------------------------------
+
+=====================================
+   COMPLETE ISSUE REPORT
+=====================================
+CRITICAL (500 errors/Broken Links/CSRF) : 42
+BROKEN ASSETS (404)                     : 0
+MISSING ELEMENTS                        : 2
+=====================================
+Broken Link: /product/wishlist/ on / returned 500
+Broken Link: /accounts/login/ on / returned 500
+Broken Link: /accounts/order-history/ on / returned 500
+Broken Link: /product/wishlist/ on / returned 500
+Broken Link: /accounts/login/ on / returned 500
+Broken Link: /accounts/register/ on / returned 500
+Broken Link: /accounts/shipping-address/ on / returned 500
+Broken Link: /product/product-reviews/ on / returned 500
+Security: Missing CSRF token on /
+Missing Element: Hero section on homepage
+Critical: /accounts/login/ returned 500
+Critical: /accounts/register/ returned 500
+Broken Link: /product/wishlist/ on /accounts/cart/ returned 500
+Broken Link: /accounts/login/ on /accounts/cart/ returned 500
+Broken Link: /accounts/order-history/ on /accounts/cart/ returned 500
+Broken Link: /product/wishlist/ on /accounts/cart/ returned 500
+Broken Link: /accounts/login/ on /accounts/cart/ returned 500
+Broken Link: /accounts/register/ on /accounts/cart/ returned 500
+Broken Link: /accounts/shipping-address/ on /accounts/cart/ returned 500
+Broken Link: /product/product-reviews/ on /accounts/cart/ returned 500
+Security: Missing CSRF token on /accounts/cart/
+Critical: /product/wishlist/ returned 500
+Broken Link: /product/wishlist/ on / returned 500
+Broken Link: /accounts/login/ on / returned 500
+Broken Link: /accounts/order-history/ on / returned 500
+Broken Link: /product/wishlist/ on / returned 500
+Broken Link: /accounts/login/ on / returned 500
+Broken Link: /accounts/register/ on / returned 500
+Broken Link: /accounts/shipping-address/ on / returned 500
+Broken Link: /product/product-reviews/ on / returned 500
+Security: Missing CSRF token on /
+Missing Element: Hero section on homepage
+Critical: /accounts/login/ returned 500
+Critical: /accounts/register/ returned 500
+Broken Link: /product/wishlist/ on /accounts/cart/ returned 500
+Broken Link: /accounts/login/ on /accounts/cart/ returned 500
+Broken Link: /accounts/order-history/ on /accounts/cart/ returned 500
+Broken Link: /product/wishlist/ on /accounts/cart/ returned 500
+Broken Link: /accounts/login/ on /accounts/cart/ returned 500
+Broken Link: /accounts/register/ on /accounts/cart/ returned 500
+Broken Link: /accounts/shipping-address/ on /accounts/cart/ returned 500
+Broken Link: /product/product-reviews/ on /accounts/cart/ returned 500
+Security: Missing CSRF token on /accounts/cart/
+Critical: /product/wishlist/ returned 500
+=====================================

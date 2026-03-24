@@ -77,6 +77,23 @@ def get_product(request, slug):
         is_active=True, start_time__lte=now, end_time__gte=now
     ).first()
 
+    # Complete the Look Algorithm
+    # Suggest 4 random products that are NOT in the same category (e.g., matching pants/shoes for a shirt)
+    complete_the_look = Product.objects.exclude(category=product.category).exclude(uid=product.uid).order_by('?')[:4]
+
+    # Smart Size Recommendation
+    recommended_size = None
+    if request.user.is_authenticated:
+        from accounts.models import OrderItem
+        past_item = OrderItem.objects.filter(
+            order__user=request.user,
+            product__category=product.category,
+            size_variant__isnull=False
+        ).order_by('-order__order_date').first()
+        
+        if past_item:
+            recommended_size = past_item.size_variant.size_name
+
     context = {
         'product': product,
         'sorted_size_variants': sorted_size_variants,
@@ -86,10 +103,16 @@ def get_product(request, slug):
         'in_wishlist': in_wishlist,
         'price_history_labels': price_history_labels,
         'price_history_values': price_history_values,
+        'price_history_json': json.dumps([
+            {'date': ph.recorded_at.strftime('%d %b %Y'), 'price': float(ph.price)} 
+            for ph in price_history_qs
+        ]),
         'lowest_price': lowest_price,
         'highest_price': highest_price,
         'active_flash_sale': active_flash_sale,
         'has_purchased': has_purchased,
+        'complete_the_look': complete_the_look,
+        'recommended_size': recommended_size,
     }
 
     if request.GET.get('size'):
@@ -285,3 +308,54 @@ def stock_notification_signup(request, product_uid):
         'success': False,
         'message': 'Invalid request method.'
     }, status=405)
+
+
+def check_inventory_ajax(request):
+    try:
+        data = json.loads(request.body)
+        product_slug = data.get('slug')
+        size = data.get('size')
+        
+        product = get_object_or_404(Product, slug=product_slug)
+        # For RetailX we assume base stock is tracked via product.stock
+        out_of_stock = product.stock <= 0
+            
+        return JsonResponse({"success": True, "out_of_stock": out_of_stock})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
+
+@login_required
+def create_price_alert_ajax(request):
+    """Handle creating or updating a price alert via AJAX."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid method'}, status=405)
+        
+    try:
+        data = json.loads(request.body)
+        product_slug = data.get('slug')
+        target_price = data.get('target_price')
+        
+        if not target_price or not product_slug:
+            return JsonResponse({'success': False, 'message': 'Missing data'}, status=400)
+            
+        try:
+            target_price = int(target_price)
+        except ValueError:
+            return JsonResponse({'success': False, 'message': 'Invalid price format'}, status=400)
+            
+        product = get_object_or_404(Product, slug=product_slug)
+        
+        from .models import PriceAlert
+        alert, created = PriceAlert.objects.update_or_create(
+            user=request.user,
+            product=product,
+            defaults={'target_price': target_price, 'is_active': True}
+        )
+        
+        return JsonResponse({
+            'success': True, 
+            'message': f'Alert set! We will email you when {product.product_name} drops below ₹{target_price}.'
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)

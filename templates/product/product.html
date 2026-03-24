@@ -567,18 +567,17 @@
               </span>
               
               <img id="mainImage" 
-                   src="{{ product.product_images.first.image_url }}" 
+                   src="{% if product.product_images.first %}{{ product.product_images.first.image_url }}{% else %}https://via.placeholder.com/500{% endif %}" 
                    alt="{{ product.product_name }}"
-                   loading="lazy"
                    onclick="openLightbox(0)" />
 
               <!-- Thumbnails -->
               <div class="thumbs-wrap mt-4 d-flex justify-content-center flex-wrap">
-                {% for image in product.product_images.all %}
+                {% for pi in product.product_images.all %}
                 <div class="item-thumb m-2 {% if forloop.first %}active{% endif %}" 
                      data-index="{{ forloop.counter0 }}"
-                     onclick="changeImage('{{ image.image_url }}', {{ forloop.counter0 }})">
-                  <img src="{{ image.image_url }}" 
+                     onclick="changeImage('{{ pi.image_url }}', {{ forloop.counter0 }})">
+                  <img src="{{ pi.image_url }}" 
                        alt="Thumbnail {{ forloop.counter }}"
                        loading="lazy" />
                 </div>
@@ -671,7 +670,16 @@
             {% if sorted_size_variants %}
             <div class="mb-4">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="fw-bold mb-0">Select Size</label>
+                <div>
+                  <label class="fw-bold mb-0">Select Size</label>
+                  {% if recommended_size %}
+                  <div class="mt-1">
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #065f46; border: 1px solid #10b981;">
+                      <i class="fas fa-magic me-1"></i> Smart Suggestion: <strong>{{ recommended_size }}</strong>
+                    </span>
+                  </div>
+                  {% endif %}
+                </div>
                 <span class="size-guide-link" data-bs-toggle="modal" data-bs-target="#sizeGuideModal">
                   <i class="fas fa-ruler"></i> Size Guide
                 </span>
@@ -705,14 +713,23 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="d-flex gap-2 flex-wrap mb-3">
+            <div class="d-flex gap-2 flex-wrap mb-3" id="action-buttons-container">
               <button type="button"
                       id="addToCartBtn"
                       onclick="addToCart()"
                       data-stock="{{ product.stock }}"
                       class="btn-primary-custom">
                 <i class="fas fa-shopping-cart"></i>
-                <span>Add to Cart</span>
+                <span id="addToCartText">Add to Cart</span>
+              </button>
+              
+              <button type="button"
+                      id="notifyMeBtn"
+                      class="btn-outline-custom"
+                      style="display:none; color: #dc3545; border-color: #dc3545;"
+                      data-bs-toggle="modal" data-bs-target="#notifyModal">
+                <i class="fas fa-bell"></i>
+                <span>Notify Me When Available</span>
               </button>
 
               <button type="button"
@@ -721,6 +738,14 @@
                       class="btn-outline-custom">
                 <i class="fas fa-heart"></i>
                 <span>{% if in_wishlist %}In Wishlist{% else %}Add to Wishlist{% endif %}</span>
+              </button>
+
+              <button type="button"
+                      id="priceAlertBtn"
+                      class="btn-outline-custom"
+                      data-bs-toggle="modal" data-bs-target="#priceAlertModal">
+                <i class="fas fa-bullseye"></i>
+                <span>Price Alert</span>
               </button>
             </div>
 
@@ -944,7 +969,7 @@
     {% endif %}
 
     <!-- ========== PRICE HISTORY CHART ========== -->
-    {% if price_history_values != '[]' %}
+    {% if price_history_values %}
     <div style="background:white;border-radius:20px;padding:28px;margin-bottom:36px;box-shadow:0 4px 20px rgba(0,0,0,0.07);">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
         <div>
@@ -978,9 +1003,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
     (function(){
-      var labels = {{ price_history_labels|safe }};
-      var values = {{ price_history_values|safe }};
-      if (!labels.length) return;
+      const priceHistoryData = {{ price_history_json|safe }};
+      if (!priceHistoryData || !priceHistoryData.length) return;
+      
+      const labels = priceHistoryData.map(d => d.date);
+      const values = priceHistoryData.map(d => d.price);
+      
       var ctx = document.getElementById('priceChart').getContext('2d');
       var grad = ctx.createLinearGradient(0,0,0,200);
       grad.addColorStop(0,'rgba(255,63,108,0.25)');
@@ -1097,6 +1125,35 @@
           {% csrf_token %}
           
           <div class="text-center mb-3">
+            <label class="fw-bold mb-2">Your Rating</label>
+            <div class="stars" id="starRating">
+              <i class="fas fa-star star" data-rating="1"></i>
+              <i class="fas fa-star star" data-rating="2"></i>
+              <i class="fas fa-star star" data-rating="3"></i>
+              <i class="fas fa-star star" data-rating="4"></i>
+              <i class="fas fa-star star" data-rating="5"></i>
+            </div>
+            <input type="hidden" name="stars" id="ratingValue" value="0">
+            <div class="mt-2"><small id="ratingText" class="text-muted">Click to rate</small></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="fw-bold mb-2">Your Review</label>
+            <textarea name="content" 
+                      id="reviewContent"
+                      class="form-control" 
+                      rows="4" 
+                      placeholder="Share your experience..."
+                      maxlength="500"
+                      required></textarea>
+            <small class="text-muted">Min 10 characters</small>
+          </div>
+
+          <button type="submit" class="btn-primary-custom" id="submitReview" disabled>
+            <i class="fas fa-paper-plane"></i> Submit Review
+          </button>
+        </form>
+      </div>
       {% else %}
       <div class="review-form-card mt-4" style="background:#f8f9fa; border:1px solid #e9ecef; text-align:center; padding:30px; border-radius:12px;">
         <i class="fas fa-shield-alt" style="font-size:32px; color:#10b981; margin-bottom:12px;"></i>
@@ -1105,45 +1162,10 @@
       </div>
       {% endif %}
     {% else %}
-    <div class="review-form-card mt-4 text-center py-4 bg-light rounded">
-      <p class="mb-2">Please log in to write a review</p>
-      <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-outline-primary btn-sm">Sign In</a>
-    </div>
-    {% endif %}
-          <label class="fw-bold mb-2">Your Rating</label>
-          <div class="stars" id="starRating">
-            <i class="fas fa-star star" data-rating="1"></i>
-            <i class="fas fa-star star" data-rating="2"></i>
-            <i class="fas fa-star star" data-rating="3"></i>
-            <i class="fas fa-star star" data-rating="4"></i>
-            <i class="fas fa-star star" data-rating="5"></i>
-          </div>
-          <input type="hidden" name="stars" id="ratingValue" value="0">
-          <div class="mt-2"><small id="ratingText" class="text-muted">Click to rate</small></div>
-        </div>
-
-        <div class="mb-3">
-          <label class="fw-bold mb-2">Your Review</label>
-          <textarea name="content" 
-                    id="reviewContent"
-                    class="form-control" 
-                    rows="4" 
-                    placeholder="Share your experience..."
-                    maxlength="500"
-                    required></textarea>
-          <small class="text-muted">Min 10 characters</small>
-        </div>
-
-        <button type="submit" class="btn-primary-custom" id="submitReview" disabled>
-          <i class="fas fa-paper-plane"></i> Submit Review
-        </button>
-      </form>
-    </div>
-    {% else %}
-    <div class="text-center py-4 border rounded">
+    <div class="text-center py-4 border rounded mt-4">
       <i class="fas fa-user-circle fa-3x text-primary mb-3"></i>
       <h5>Sign in to Write a Review</h5>
-      <a href="{% url 'login' %}" class="btn-primary-custom mt-2">
+      <a href="{% url 'login' %}?next={{ request.path }}" class="btn-primary-custom mt-2">
         <i class="fas fa-sign-in-alt"></i> Sign In
       </a>
     </div>
@@ -1151,6 +1173,42 @@
 
   </div>
 </section>
+
+<!-- ========== COMPLETE THE LOOK ========== -->
+{% if complete_the_look %}
+<section class="complete-the-look py-5 bg-light border-top">
+  <div class="container">
+    <div class="d-flex align-items-center mb-4">
+      <i class="fas fa-magic fa-2x me-3 text-primary"></i>
+      <div>
+        <h3 class="mb-0 fw-bold">Complete The Look</h3>
+        <p class="text-muted mb-0">Discover complementary styles to elevate your outfit.</p>
+      </div>
+    </div>
+    
+    <div class="row g-4">
+      {% for item in complete_the_look %}
+      <div class="col-6 col-md-3">
+        <div class="card h-100 border-0 shadow-sm" style="border-radius:12px;overflow:hidden;transition:all 0.3s ease;">
+          <a href="{% url 'get_product' item.slug %}" style="display:block;overflow:hidden;">
+            {% if item.product_images.first %}
+              <img src="{{ item.product_images.first.image_url }}" alt="{{ item.product_name }}" class="w-100" style="object-fit:cover;aspect-ratio:3/4;transition:transform 0.5s;">
+            {% else %}
+              <div style="aspect-ratio:3/4;background:#e9ecef;"></div>
+            {% endif %}
+          </a>
+          <div class="card-body p-3">
+            <span style="font-size:11px;color:#6366f1;font-weight:700;text-transform:uppercase;">{{ item.category.category_name }}</span>
+            <a href="{% url 'get_product' item.slug %}" class="d-block mt-1 text-dark" style="font-size:14px;font-weight:600;text-decoration:none;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;">{{ item.product_name }}</a>
+            <div class="mt-2 fw-bold">₹{{ item.price }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
 
 <!-- ========== LIGHTBOX ========== -->
 <div class="lightbox" id="lightbox">
@@ -1197,6 +1255,29 @@
             <li>Match measurement to size chart above</li>
           </ol>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PRICE ALERT MODAL ========== -->
+<div class="modal fade" id="priceAlertModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-bullseye text-primary"></i> Set Price Alert</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Get notified when the price drops below your target!</p>
+        <label for="targetPriceInput" class="form-label fw-bold">Target Price (₹)</label>
+        <input type="number" class="form-control" id="targetPriceInput" placeholder="e.g. 1500" min="1">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-primary-custom" onclick="setPriceAlert()">
+          Set Alert
+        </button>
       </div>
     </div>
   </div>
@@ -1249,7 +1330,7 @@
 <!-- ==================== JAVASCRIPT ==================== -->
 <script>
 // ========== CONFIG ==========
-const STOCK = {{ product.stock }};
+let STOCK = {{ product.stock }};
 const PRODUCT_ID = '{{ product.uid }}';
 const productImages = [
   {% for img in product.product_images.all %}'{{ img.image_url }}'{% if not forloop.last %},{% endif %}{% endfor %}
@@ -1310,7 +1391,48 @@ function selectColor(element, colorName) {
 function updatePriceAndCart(size) {
   const url = new URL(window.location.href);
   url.searchParams.set('size', size);
-  window.location.href = url.toString();
+  window.history.pushState({}, '', url);
+
+  fetch('/product/check-inventory/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: JSON.stringify({
+      slug: '{{ product.slug }}',
+      size: size
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    const cartBtn = document.getElementById('addToCartBtn');
+    const notifyBtn = document.getElementById('notifyMeBtn');
+    const plusBtn = document.getElementById('qtyPlus');
+    const minusBtn = document.getElementById('qtyMinus');
+    
+    if(data.success) {
+      if(data.out_of_stock) {
+        STOCK = 0;
+        cartBtn.classList.add('disabled');
+        cartBtn.querySelector('span').innerText = 'Out of Stock';
+        cartBtn.style.pointerEvents = 'none';
+        notifyBtn.style.display = 'inline-flex';
+        
+        plusBtn.disabled = true;
+        minusBtn.disabled = true;
+      } else {
+        STOCK = 999; // assume in stock if we don't have explicit variant numbers
+        cartBtn.classList.remove('disabled');
+        cartBtn.querySelector('span').innerText = 'Add to Cart';
+        cartBtn.style.pointerEvents = 'auto';
+        notifyBtn.style.display = 'none';
+        
+        plusBtn.disabled = false;
+        minusBtn.disabled = document.getElementById('quantity').value <= 1;
+      }
+    }
+  });
 }
 
 // ========== QUANTITY CONTROLS ==========
@@ -1561,6 +1683,47 @@ function subscribeNotification() {
   });
 }
 
+// ========== PRICE ALERT ==========
+function setPriceAlert() {
+  {% if not user.is_authenticated %}
+    alert('Please login to set a price alert');
+    window.location.href = '{% url "login" %}?next={{ request.path }}';
+    return;
+  {% endif %}
+
+  const targetPrice = document.getElementById('targetPriceInput').value;
+  if (!targetPrice || targetPrice <= 0) {
+    alert("Please enter a valid target price");
+    return;
+  }
+  
+  fetch('/product/set-price-alert/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: JSON.stringify({
+      slug: '{{ product.slug }}',
+      target_price: targetPrice
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+    if(data.success) {
+      document.getElementById('targetPriceInput').value = '';
+      const modalEl = document.getElementById('priceAlertModal');
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.hide();
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Failed to set price alert. Try logging in.');
+  });
+}
+
 // ========== ASK QUESTION ==========
 function submitQuestion() {
   const question = document.getElementById('questionText').value.trim();
@@ -1595,7 +1758,7 @@ function addToRecentlyViewed() {
   recent.unshift({
     id: PRODUCT_ID,
     name: '{{ product.product_name }}',
-    image: '{{ product.product_images.first.image_url }}',
+    image: '{% if product.product_images.first %}{{ product.product_images.first.image_url }}{% else %}https://via.placeholder.com/500{% endif %}',
     price: '{{ product.price }}',
     url: '{{ request.path }}'
   });

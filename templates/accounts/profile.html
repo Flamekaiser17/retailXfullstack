@@ -221,7 +221,7 @@
 
     <!-- Navigation Tabs -->
     <nav class="nav nav-borders">
-      <a class="nav-link active" href="{% url 'profile' username=user.username %}">
+      <a class="nav-link active" href="{% url 'profile' %}">
         <i class="fa fa-user me-2"></i>Dashboard
       </a>
       <a class="nav-link" href="{% url 'order_history' %}">
@@ -357,7 +357,7 @@
                 <small class="text-muted">Update security</small>
               </div>
             </a>
-            <a href="{% url 'home' %}" class="quick-action-btn">
+            <a href="{% url 'index' %}" class="quick-action-btn">
               <div class="quick-action-icon">
                 <i class="fa fa-shopping-bag"></i>
               </div>

@@ -27,7 +27,7 @@ SECRET_KEY = config("SECRET_KEY")
 #DEBUG=True → dev mode
 #DEBUG=False → production mode
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", default="True", cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 # Allowed hosts - read from environment variable (comma-separated values)
 ALLOWED_HOSTS = config(
@@ -79,41 +79,50 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 SOCIAL_AUTH_FACEBOOK_KEY = config('SOCIAL_AUTH_FACEBOOK_KEY', default='')
 SOCIAL_AUTH_FACEBOOK_SECRET = config('SOCIAL_AUTH_FACEBOOK_SECRET', default='')
 
+SOCIAL_AUTH_GOOGLE_KEY = config('SOCIAL_AUTH_GOOGLE_KEY', default='')
+SOCIAL_AUTH_GOOGLE_SECRET = config('SOCIAL_AUTH_GOOGLE_SECRET', default='')
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
+        "APP": {
+            "client_id": SOCIAL_AUTH_GOOGLE_KEY,
+            "secret": SOCIAL_AUTH_GOOGLE_SECRET,
+            "key": ""
+        },
         "SCOPE": [
             "profile",
             "email"
         ],
-        "AUTH_PARAMS": {"access_type": "online"}
-    },
-
-    # Facebook authentication
-    "facebook": {
-        'APP': {
-            # Facebook API KEYS
-            'client_id': SOCIAL_AUTH_FACEBOOK_KEY,
-            'secret': SOCIAL_AUTH_FACEBOOK_SECRET,
+        "AUTH_PARAMS": {
+            "access_type": "online",
+            "prompt": "select_account"
         },
-        'METHOD': 'oauth2',  # Set to 'js_sdk' to use the Facebook connect SDK
-        'SDK_URL': '//connect.facebook.net/{locale}/sdk.js',
-        'SCOPE': ['email', 'public_profile'],
-        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
-        'INIT_PARAMS': {'cookie': True},
-        'FIELDS': [
-            'id',
-            'first_name',
-            'last_name',
-            'middle_name',
-            'name',
-            'name_format',
-            'picture',
-            'short_name',
+        "OAUTH_PKCE_ENABLED": True
+    },
+    "facebook": {
+        "APP": {
+            "client_id": SOCIAL_AUTH_FACEBOOK_KEY,
+            "secret": SOCIAL_AUTH_FACEBOOK_SECRET
+        },
+        "METHOD": "oauth2",
+        "SDK_URL": "//connect.facebook.net/{locale}/sdk.js",
+        "SCOPE": ["email", "public_profile"],
+        "AUTH_PARAMS": {"auth_type": "reauthenticate"},
+        "INIT_PARAMS": {"cookie": True},
+        "FIELDS": [
+            "id",
+            "first_name",
+            "last_name",
+            "middle_name",
+            "name",
+            "name_format",
+            "picture",
+            "short_name"
         ],
-        'EXCHANGE_TOKEN': True,
-        'VERIFIED_EMAIL': False,
-        'VERSION': 'v17.0',
-        'GRAPH_API_URL': 'https://graph.facebook.com/v17.0',
+        "EXCHANGE_TOKEN": True,
+        "VERIFIED_EMAIL": False,
+        "VERSION": "v17.0",
+        "GRAPH_API_URL": "https://graph.facebook.com/v17.0"
     }
 }
 
@@ -151,25 +160,24 @@ WSGI_APPLICATION = 'ecomm.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+# Use DATABASE_URL from environment for production (Render/PostgreSQL)
+DATABASES = {
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600
+    )
+}
 
-# Database configuration
-# Use PostgreSQL on Render, SQLite locally
-DATABASE_URL = os.environ.get('DATABASE_URL')
-
-if DATABASE_URL:
-    # Production: Use PostgreSQL from Render
-    DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
-    }
-else:
-    # Development: Use SQLite
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+# Security Headers for Production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = 31536000 # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 
 # Password validation
@@ -236,9 +244,10 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER if EMAIL_HOST_USER else 'noreply@retailx.com'
 EMAIL_USE_SSL = False
 
-# RazorPay API KEYS (optional - can be added later)
-RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
-RAZORPAY_SECRET_KEY = config('RAZORPAY_SECRET_KEY', default='')
+# RazorPay API KEYS
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
+RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET', default='')
 
 # Auth Backends Configurations
 AUTHENTICATION_BACKENDS = (

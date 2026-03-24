@@ -141,6 +141,22 @@ class StockNotification(BaseModel):
         return f'{self.email} - {self.product.product_name}'
 
 
+class PriceAlert(BaseModel):
+    """Allows users to set target price alerts. Feature 2."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='price_alerts')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_alerts')
+    target_price = models.IntegerField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'product')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.product.product_name} < {self.target_price}"
+
+
 class PriceHistory(BaseModel):
     """Tracks price changes over time — unique feature vs Amazon/Flipkart"""
     product = models.ForeignKey(
